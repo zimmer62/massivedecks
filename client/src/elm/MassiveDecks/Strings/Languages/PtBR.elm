@@ -31,6 +31,9 @@ translate mdString =
         MassiveDecks ->
             [ Text "Massive Decks" ]
 
+        CardBack ->
+            [ Text "Massive Decks" ]
+
         Close ->
             [ Text "Fechar" ]
 

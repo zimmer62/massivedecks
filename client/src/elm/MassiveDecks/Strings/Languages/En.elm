@@ -32,6 +32,9 @@ translate mdString =
         MassiveDecks ->
             [ Text "Massive Decks" ]
 
+        CardBack ->
+            [ Text "Cards Against Humanity"]
+
         Close ->
             [ Text "Close" ]
 
