@@ -9,6 +9,7 @@ included in some form in the message.
 -}
 type MdString
     = MassiveDecks -- The name of the game.
+    | CardBack -- Text from the back of the card.
     | Close -- Close a dialog window.
       -- Special
       {- Plural only makes sense for nouns, other results will be nonsense. If the amount is not given, it's an unknown
