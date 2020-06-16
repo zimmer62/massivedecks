@@ -54,7 +54,7 @@ type alias TimeLimits =
 default : Rules
 default =
     { handSize = 10
-    , scoreLimit = Just 25
+    , scoreLimit = Just 15
     , houseRules =
         { rando = Nothing
         , packingHeat = Nothing
@@ -68,10 +68,10 @@ default =
 defaultTimeLimits : TimeLimits
 defaultTimeLimits =
     { mode = Soft
-    , playing = Just 60
-    , revealing = Just 30
-    , judging = Just 30
-    , complete = 2
+    , playing = Just 90
+    , revealing = Just 120
+    , judging = Just 90
+    , complete = 5
     }
 
 
