@@ -1,5 +1,6 @@
 import Moment from "moment";
 import * as Util from "./util";
+import * as LobbyConfig from "./lobby/config";
 
 type Duration = UnparsedDuration | ParsedDuration;
 type UnparsedDuration = string;
@@ -27,6 +28,7 @@ export interface Config<D extends Duration> extends EnvironmentalConfig {
   tasks: Tasks<D>;
   storage: BaseStorage<D>;
   cache: BaseCache<D>;
+  defaults: LobbyConfig.Defaults;
 }
 
 export type Parsed = Config<ParsedDuration>;
@@ -35,7 +37,6 @@ export type Unparsed = Config<UnparsedDuration>;
 type Timeouts<D extends Duration> = {
   timeoutCheckFrequency: D;
   disconnectionGracePeriod: D;
-  finishedPlayingDelay: D;
 } & { [key: string]: D };
 
 type Tasks<D extends Duration> = {
@@ -48,15 +49,22 @@ export interface BuiltIn {
   decks: string[];
 }
 
-interface BaseCardcast<D extends Duration> {
+interface BaseManyDecks<D extends Duration> {
+  baseUrl: string;
   timeout: D;
   simultaneousConnections: number;
 }
-export type Cardcast = BaseCardcast<ParsedDuration>;
+export type ManyDecks = BaseManyDecks<ParsedDuration>;
+
+export interface JsonAgainstHumanity {
+  aboutUrl: string;
+  url: string;
+}
 
 interface BaseSources<D extends Duration> {
   builtIn?: BuiltIn;
-  cardcast?: BaseCardcast<D>;
+  manyDecks?: BaseManyDecks<D>;
+  jsonAgainstHumanity?: JsonAgainstHumanity;
 }
 export type Sources = BaseSources<ParsedDuration>;
 
@@ -142,15 +150,23 @@ export const parseTasks = (
   processTickFrequency: parseDuration(tasks.processTickFrequency),
 });
 
-const parseCardcast = (cardcast: BaseCardcast<UnparsedDuration>): Cardcast => ({
-  ...cardcast,
-  timeout: parseDuration(cardcast.timeout),
+const parseManyDecks = (
+  manyDecks: BaseManyDecks<UnparsedDuration>
+): ManyDecks => ({
+  ...manyDecks,
+  baseUrl: manyDecks.baseUrl.endsWith("/")
+    ? manyDecks.baseUrl
+    : manyDecks.baseUrl + "/",
+  timeout: parseDuration(manyDecks.timeout),
 });
 
 const parseSources = (sources: BaseSources<UnparsedDuration>): Sources => ({
   ...(sources.builtIn !== undefined ? { builtIn: sources.builtIn } : {}),
-  ...(sources.cardcast !== undefined
-    ? { cardcast: parseCardcast(sources.cardcast) }
+  ...(sources.manyDecks !== undefined
+    ? { manyDecks: parseManyDecks(sources.manyDecks) }
+    : {}),
+  ...(sources.jsonAgainstHumanity !== undefined
+    ? { jsonAgainstHumanity: sources.jsonAgainstHumanity }
     : {}),
 });
 

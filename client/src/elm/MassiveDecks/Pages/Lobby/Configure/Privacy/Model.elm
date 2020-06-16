@@ -1,29 +1,15 @@
-module MassiveDecks.Pages.Lobby.Configure.Privacy.Model exposing
-    ( Config
-    , Id(..)
-    , Model
-    , Msg(..)
-    )
+module MassiveDecks.Pages.Lobby.Configure.Privacy.Model exposing (Config, Id(..))
 
 
 type Id
     = All
     | Password
     | Public
+    | AudienceMode
 
 
 type alias Config =
     { password : Maybe String
     , public : Bool
+    , audienceMode : Bool
     }
-
-
-type alias Model =
-    { passwordVisible : Bool
-    }
-
-
-type Msg
-    = PasswordChange (Maybe String)
-    | PublicChange Bool
-    | TogglePasswordVisibility

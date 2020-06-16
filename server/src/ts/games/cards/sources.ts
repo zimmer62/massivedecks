@@ -1,11 +1,12 @@
 import { Cache } from "../../cache";
 import * as Util from "../../util";
 import * as Source from "./source";
-import * as Cardcast from "./sources/cardcast";
 import * as Player from "./sources/custom";
 import * as Config from "../../config";
 import * as BuiltIn from "./sources/builtIn";
 import { SourceNotFoundError } from "../../errors/action-execution-error";
+import * as ManyDecks from "./sources/many-decks";
+import * as JsonAgainstHumanity from "./sources/json-against-humanity";
 
 async function loadIfEnabled<Config, MetaResolver>(
   config: Config | undefined,
@@ -20,22 +21,26 @@ async function loadIfEnabled<Config, MetaResolver>(
 
 export interface ClientInfo {
   builtIn?: BuiltIn.ClientInfo;
-  cardcast?: boolean;
+  manyDecks?: ManyDecks.ClientInfo;
+  jsonAgainstHumanity?: JsonAgainstHumanity.ClientInfo;
 }
 
 export class Sources {
   public readonly builtIn?: BuiltIn.MetaResolver;
-  public readonly cardcast?: Cardcast.MetaResolver;
+  public readonly manyDecks?: ManyDecks.MetaResolver;
+  public readonly jsonAgainstHumanity?: JsonAgainstHumanity.MetaResolver;
 
   public constructor(
     builtIn?: BuiltIn.MetaResolver,
-    cardcast?: Cardcast.MetaResolver
+    manyDecks?: ManyDecks.MetaResolver,
+    jsonAgainstHumanity?: JsonAgainstHumanity.MetaResolver
   ) {
-    if (builtIn === undefined && cardcast === undefined) {
+    if (builtIn === undefined && manyDecks === undefined) {
       throw new Error("At least one source must be enabled.");
     }
     this.builtIn = builtIn;
-    this.cardcast = cardcast;
+    this.manyDecks = manyDecks;
+    this.jsonAgainstHumanity = jsonAgainstHumanity;
   }
 
   public clientInfo(): ClientInfo {
@@ -45,7 +50,12 @@ export class Sources {
             builtIn: this.builtIn.clientInfo(),
           }
         : {}),
-      ...(this.cardcast !== undefined ? { cardcast: true } : {}),
+      ...(this.manyDecks !== undefined
+        ? { manyDecks: this.manyDecks.clientInfo() }
+        : {}),
+      ...(this.jsonAgainstHumanity !== undefined
+        ? { jsonAgainstHumanity: this.jsonAgainstHumanity.clientInfo() }
+        : {}),
     };
   }
 
@@ -56,8 +66,11 @@ export class Sources {
       case "BuiltIn":
         return this.builtIn;
 
-      case "Cardcast":
-        return this.cardcast;
+      case "ManyDecks":
+        return this.manyDecks;
+
+      case "JAH":
+        return this.jsonAgainstHumanity;
 
       default:
         Util.assertNever(source);
@@ -91,10 +104,11 @@ export class Sources {
     cache: Cache,
     source: Source.External
   ): Source.Resolver<Source.External> {
-    return new Source.CachedResolver(
-      cache,
-      this.metaResolver(source).resolver(source)
-    );
+    const metaResolver = this.metaResolver(source);
+    const resolver = metaResolver.resolver(source);
+    return metaResolver.cache
+      ? new Source.CachedResolver(cache, resolver)
+      : resolver;
   }
 
   /**
@@ -114,13 +128,19 @@ export class Sources {
   };
 
   public static async from(config: Config.Sources): Promise<Sources> {
-    const [builtInMeta, cardcastMeta] = await Promise.all<
+    const [
+      builtInMeta,
+      manyDecksMeta,
+      jsonAgainstHumanityMeta,
+    ] = await Promise.all<
       BuiltIn.MetaResolver | undefined,
-      Cardcast.MetaResolver | undefined
+      ManyDecks.MetaResolver | undefined,
+      JsonAgainstHumanity.MetaResolver | undefined
     >([
       loadIfEnabled(config.builtIn, BuiltIn.load),
-      loadIfEnabled(config.cardcast, Cardcast.load),
+      loadIfEnabled(config.manyDecks, ManyDecks.load),
+      loadIfEnabled(config.jsonAgainstHumanity, JsonAgainstHumanity.load),
     ]);
-    return new Sources(builtInMeta, cardcastMeta);
+    return new Sources(builtInMeta, manyDecksMeta, jsonAgainstHumanityMeta);
   }
 }

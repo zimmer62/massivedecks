@@ -9,6 +9,9 @@ import * as Store from "../store";
 import * as Timeout from "../timeout";
 import * as Token from "../user/token";
 import * as Postgres from "../util/postgres";
+import * as LobbyConfig from "../lobby/config";
+import { LoadDeckSummary } from "../task/load-deck-summary";
+import * as Task from "../task";
 
 class To0 extends Postgres.Upgrade<undefined, 0> {
   public readonly to = 0;
@@ -22,7 +25,7 @@ class To0 extends Postgres.Upgrade<undefined, 0> {
           CREATE TABLE massivedecks.lobbies ( 
             id SERIAL PRIMARY KEY, 
             lobby JSONB NOT NULL, 
-            last_access TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
+            last_access TIMESTAMP DEFAULT NOW() 
           );
         `);
     await client.query(`
@@ -80,13 +83,14 @@ export class PostgresStore extends Store.Store {
   public static async create(
     config: Config.PostgreSQL
   ): Promise<PostgresStore> {
-    const pg = new Postgres.Postgres("mdcache", config.connection, upgrades);
-
+    const pg = new Postgres.Postgres(
+      "massivedecks",
+      config.connection,
+      upgrades
+    );
     await pg.ensureCurrent();
-
     return await pg.withClient(async (client) => {
       const rows = await client.query(`SELECT id FROM massivedecks.meta`);
-
       return new PostgresStore(rows.rows[0]["id"], config, pg);
     });
   }
@@ -115,7 +119,7 @@ export class PostgresStore extends Store.Store {
             "SELECT EXISTS (SELECT id FROM massivedecks.lobbies WHERE id = $1)",
             [lobbyId]
           )
-        ).rows[0]
+        ).rows[0].exists
     );
   }
 
@@ -134,8 +138,8 @@ export class PostgresStore extends Store.Store {
       const result = await client.query(
         `
           DELETE FROM massivedecks.lobbies WHERE
-            (last_access + $1::interval) < CURRENT_TIMESTAMP OR
-            (SELECT bool_and(value->>'control' = 'Computer' OR value->>'Presence' = 'Left') FROM jsonb_each(lobby->'users'));
+            ((last_access + $1::interval ) < NOW()) OR
+            (SELECT bool_and(value->>'control' = 'Computer' OR value->>'presence' = 'Left') FROM jsonb_each(lobby->'users'));
         `,
         [`${this.config.abandonedTime} milliseconds`]
       );
@@ -144,7 +148,7 @@ export class PostgresStore extends Store.Store {
   }
 
   public async *lobbySummaries(): AsyncIterableIterator<Lobby.Summary> {
-    return this.pg.withClientIterator(
+    yield* this.pg.withClientIterator(
       PostgresStore.lobbySummariesInternal.bind(this)
     );
   }
@@ -169,10 +173,19 @@ export class PostgresStore extends Store.Store {
 
   public async newLobby(
     creation: CreateLobby,
-    secret: string
-  ): Promise<{ gameCode: GameCode.GameCode; token: Token.Token }> {
+    secret: string,
+    defaults: LobbyConfig.Defaults
+  ): Promise<{
+    gameCode: GameCode.GameCode;
+    token: Token.Token;
+    tasks: Iterable<Task.Task>;
+  }> {
     return await this.pg.withClient(async (client) => {
-      const lobby = Lobby.create(creation);
+      const { lobby, tasks } = Lobby.create(
+        "fake-game-code",
+        creation,
+        defaults
+      );
       const result = await client.query(
         "INSERT INTO massivedecks.lobbies VALUES (DEFAULT, $1) RETURNING id",
         [lobby]
@@ -188,19 +201,20 @@ export class PostgresStore extends Store.Store {
           await this.id(),
           secret
         ),
+        tasks: tasks.map((task) => new LoadDeckSummary(gameCode, task.source)),
       };
     });
   }
 
   public async *timedOut(): AsyncIterableIterator<Timeout.TimedOut> {
-    return this.pg.withClientIterator(PostgresStore.timedOutInternal);
+    yield* this.pg.withClientIterator(PostgresStore.timedOutInternal);
   }
 
   private static async *timedOutInternal(
     client: Pg.PoolClient
   ): AsyncIterableIterator<Timeout.TimedOut> {
     const result = await client.query(
-      "SELECT * FROM massivedecks.timeouts WHERE after < $1",
+      "SELECT * FROM massivedecks.timeouts WHERE after < $1;",
       [Date.now()]
     );
     for (const row of result.rows) {
@@ -230,7 +244,7 @@ export class PostgresStore extends Store.Store {
       );
       if (transaction.lobby) {
         await client.query(
-          "UPDATE massivedecks.lobbies SET lobby=$2, last_access=CURRENT_TIMESTAMP WHERE id = $1;",
+          "UPDATE massivedecks.lobbies SET lobby=$2, last_access=NOW() WHERE id = $1;",
           [lobbyId, transaction.lobby]
         );
       }

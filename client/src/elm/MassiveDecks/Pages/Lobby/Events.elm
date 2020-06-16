@@ -1,5 +1,6 @@
 module MassiveDecks.Pages.Lobby.Events exposing
-    ( Event(..)
+    ( AfterPlaying
+    , Event(..)
     , GameEvent(..)
     , PresenceState(..)
     , TimedGameEvent(..)
@@ -47,6 +48,7 @@ type PresenceState
 
 type GameEvent
     = HandRedrawn { player : User.Id, hand : Maybe (List Card.Response) }
+    | CardDiscarded { player : User.Id, card : Card.Response, replacement : Maybe Card.Response }
     | PlaySubmitted { by : User.Id }
     | PlayTakenBack { by : User.Id }
     | PlayerAway { player : User.Id }
@@ -63,6 +65,12 @@ type TimedState
     | WithTime { event : TimedGameEvent, time : Time }
 
 
+type alias AfterPlaying =
+    { played : Maybe Play.Id
+    , drawn : Maybe (List Card.Response)
+    }
+
+
 type TimedGameEvent
     = RoundStarted
         { id : Round.Id
@@ -71,6 +79,7 @@ type TimedGameEvent
         , call : Card.Call
         , drawn : Maybe (List Card.Response)
         }
-    | StartRevealing { plays : List Play.Id, drawn : Maybe (List Card.Response) }
+    | StartRevealing { plays : List Play.Id, afterPlaying : AfterPlaying }
+    | StartJudging { plays : Maybe (List Play.Known), afterPlaying : AfterPlaying }
     | RoundFinished { winner : User.Id, playedBy : Dict Play.Id Play.Details }
     | PlayRevealed { id : Play.Id, play : List Card.Response }

@@ -10,6 +10,7 @@ export interface Config {
   rules: Rules.Rules;
   public: boolean;
   password?: string;
+  audienceMode: boolean;
   decks: ConfiguredSource[];
 }
 
@@ -30,7 +31,18 @@ export interface Public {
    * @maxLength 100
    */
   password?: string;
+  audienceMode?: boolean;
   decks: ConfiguredSource[];
+}
+
+/**
+ * Default configuration values for new lobbies.
+ */
+export interface Defaults {
+  rules: Rules.Public;
+  public: boolean;
+  audienceMode: boolean;
+  decks: Source.External[];
 }
 
 /**
@@ -68,5 +80,6 @@ export const censor = (config: Config): Public => ({
   rules: Rules.censor(config.rules),
   decks: config.decks,
   ...(config.public ? { public: true } : {}),
+  ...(config.audienceMode ? { audienceMode: true } : {}),
   ...(config.password !== undefined ? { password: config.password } : {}),
 });

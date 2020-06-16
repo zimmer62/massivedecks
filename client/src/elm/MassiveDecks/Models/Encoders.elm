@@ -24,7 +24,8 @@ module MassiveDecks.Models.Encoders exposing
 import Dict
 import Json.Encode as Json
 import MassiveDecks.Card.Source.BuiltIn.Model as BuiltIn
-import MassiveDecks.Card.Source.Cardcast.Model as Cardcast
+import MassiveDecks.Card.Source.JsonAgainstHumanity.Model as JsonAgainstHumanity
+import MassiveDecks.Card.Source.ManyDecks.Model as ManyDecks
 import MassiveDecks.Card.Source.Model as Source exposing (Source)
 import MassiveDecks.Cast.Model as Cast
 import MassiveDecks.Game.Player as Player
@@ -66,6 +67,7 @@ config c =
             , Just ( "decks", c.decks |> decks )
             , Just ( "version", c.version |> Json.string )
             , ( "public", True |> Json.bool ) |> Maybe.justIf c.privacy.public
+            , ( "audienceMode", True |> Json.bool ) |> Maybe.justIf c.privacy.audienceMode
             , c.privacy.password |> Maybe.map (\p -> ( "password", p |> Json.string ))
             ]
         )
@@ -77,22 +79,31 @@ rules r =
         (List.concat
             [ [ ( "handSize", r.handSize |> Json.int )
               , ( "houseRules", r.houseRules |> houseRules )
-              , ( "timeLimits", r.timeLimits |> timeLimits )
+              , ( "stages", r.stages |> stages )
               ]
             , r.scoreLimit |> Maybe.map (\sl -> [ ( "scoreLimit", sl |> Json.int ) ]) |> Maybe.withDefault []
             ]
         )
 
 
-timeLimits : Rules.TimeLimits -> Json.Value
-timeLimits t =
+stages : Rules.Stages -> Json.Value
+stages t =
     Json.object
         (List.filterMap identity
-            [ Just ( "mode", timeLimitMode t.mode )
-            , t.playing |> Maybe.map (\p -> ( "playing", p |> Json.int ))
-            , t.revealing |> Maybe.map (\r -> ( "revealing", r |> Json.int ))
-            , t.judging |> Maybe.map (\j -> ( "judging", j |> Json.int ))
-            , Just ( "complete", t.complete |> Json.int )
+            [ Just ( "timeLimitMode", timeLimitMode t.mode )
+            , Just ( "playing", t.playing |> stageRules )
+            , t.revealing |> Maybe.map (\r -> ( "revealing", r |> stageRules ))
+            , Just ( "judging", t.judging |> stageRules )
+            ]
+        )
+
+
+stageRules : Rules.Stage -> Json.Value
+stageRules s =
+    Json.object
+        (List.filterMap identity
+            [ s.duration |> Maybe.map (\d -> ( "duration", d |> Json.int ))
+            , Just ( "after", s.after |> Json.int )
             ]
         )
 
@@ -105,6 +116,7 @@ houseRules h =
             , h.packingHeat |> Maybe.map (\p -> ( "packingHeat", packingHeat p ))
             , h.reboot |> Maybe.map (\r -> ( "reboot", reboot r ))
             , h.comedyWriter |> Maybe.map (\c -> ( "comedyWriter", comedyWriter c ))
+            , h.neverHaveIEver |> Maybe.map (\n -> ( "neverHaveIEver", neverHaveIEver n ))
             ]
         )
 
@@ -124,6 +136,11 @@ packingHeat _ =
     Json.object []
 
 
+neverHaveIEver : Rules.NeverHaveIEver -> Json.Value
+neverHaveIEver _ =
+    Json.object []
+
+
 comedyWriter : Rules.ComedyWriter -> Json.Value
 comedyWriter { number, exclusive } =
     Json.object [ ( "number", number |> Json.int ), ( "exclusive", exclusive |> Json.bool ) ]
@@ -135,13 +152,13 @@ decks d =
 
 
 deckOrError : Decks.DeckOrError -> Json.Value
-deckOrError de =
-    case de of
-        Decks.D d ->
-            deck d
+deckOrError d =
+    case d.result of
+        Ok s ->
+            deck { source = d.source, summary = s }
 
-        Decks.E e ->
-            deckError e
+        Err r ->
+            deckError { source = d.source, reason = r }
 
 
 deck : Decks.Deck -> Json.Value
@@ -324,11 +341,20 @@ lobbyToken =
 source : Source.External -> Json.Value
 source s =
     case s of
-        Source.Cardcast (Cardcast.PlayCode playCode) ->
-            Json.object [ ( "source", "Cardcast" |> Json.string ), ( "playCode", playCode |> Json.string ) ]
+        Source.ManyDecks deckCode ->
+            Json.object
+                [ ( "source", "ManyDecks" |> Json.string )
+                , ( "deckCode", deckCode |> ManyDecks.encode )
+                ]
 
-        Source.BuiltIn (BuiltIn.Id id) ->
-            Json.object [ ( "source", "BuiltIn" |> Json.string ), ( "id", id |> Json.string ) ]
+        Source.BuiltIn id ->
+            Json.object [ ( "source", "BuiltIn" |> Json.string ), ( "id", id |> BuiltIn.toString |> Json.string ) ]
+
+        Source.JsonAgainstHumanity id ->
+            Json.object
+                [ ( "source", "JAH" |> Json.string )
+                , ( "id", id |> JsonAgainstHumanity.toString |> Json.string )
+                ]
 
 
 language : Language -> Json.Value

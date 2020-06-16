@@ -10,7 +10,9 @@ module MassiveDecks.Game.Model exposing
 
 import Dict exposing (Dict)
 import Html exposing (Html)
+import Html5.DragDrop as DragDrop
 import MassiveDecks.Card.Model as Card
+import MassiveDecks.Card.Parts as Parts
 import MassiveDecks.Game.Action.Model exposing (Action)
 import MassiveDecks.Game.Player exposing (Player)
 import MassiveDecks.Game.Round as Round exposing (Round)
@@ -31,6 +33,10 @@ type alias Model =
     , completeRound : Maybe Round.Complete
     , viewingHistory : Bool
     , time : Maybe Time
+    , helpVisible : Bool
+    , confetti : Bool
+    , discarded : List ( User.Id, Card.Response )
+    , dragDrop : DragDrop.Model Card.Id Int
     }
 
 
@@ -45,6 +51,10 @@ emptyModel game =
     , completeRound = Nothing
     , viewingHistory = False
     , time = Nothing
+    , helpVisible = False
+    , confetti = False
+    , discarded = []
+    , dragDrop = DragDrop.init
     }
 
 
@@ -67,7 +77,9 @@ type alias RoundView msg =
     { instruction : Maybe MdString
     , action : Maybe Action
     , content : Html msg
-    , fillCallWith : List Card.Response
+    , slotAttrs : Parts.SlotAttrs msg
+    , fillCallWith : Dict Int String
+    , roundAttrs : List (Html.Attribute msg)
     }
 
 

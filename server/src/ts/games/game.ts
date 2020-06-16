@@ -50,7 +50,8 @@ export class Game {
     decks: Decks.Decks,
     rules: Rules.Rules,
     paused = false,
-    history: PublicRound.Complete[] | undefined = undefined
+    history: PublicRound.Complete[] | undefined = undefined,
+    winner: User.Id[] | undefined = undefined
   ) {
     this.round = round;
     this.history = history === undefined ? [] : history;
@@ -59,6 +60,7 @@ export class Game {
     this.decks = decks;
     this.rules = rules;
     this.paused = paused;
+    this.winner = winner;
   }
 
   public toJSON(): object {
@@ -70,6 +72,7 @@ export class Game {
       rules: this.rules,
       paused: this.paused,
       history: this.history,
+      winner: this.winner,
     };
   }
 
@@ -84,7 +87,8 @@ export class Game {
       },
       game.rules,
       game.paused,
-      game.history
+      game.history,
+      game.winner
     );
 
   private static activePlayer(
@@ -280,15 +284,13 @@ export class Game {
       const play = this.round.plays.find((p) => p.playedBy === toRemove);
       if (play === undefined) {
         this.round.players.delete(toRemove);
-        const timeouts = [];
-        const timeout = FinishedPlaying.ifNeeded(this.round as Round.Playing);
-        if (timeout !== undefined) {
-          timeouts.push({
-            timeout: timeout,
-            after: server.config.timeouts.finishedPlayingDelay,
-          });
+        if (this.round.stage === "Playing") {
+          return {
+            timeouts: Util.asOptionalIterable(
+              FinishedPlaying.ifNeeded(this.rules, this.round)
+            ),
+          };
         }
-        return { timeouts };
       }
       return {};
     } else {
@@ -372,18 +374,12 @@ export class Game {
     }
 
     const timeouts = [];
-    const finishedTimeout = FinishedPlaying.ifNeeded(game.round);
+    const finishedTimeout = FinishedPlaying.ifNeeded(game.rules, game.round);
     if (finishedTimeout !== undefined) {
-      timeouts.push({
-        timeout: finishedTimeout,
-        after: server.config.timeouts.finishedPlayingDelay,
-      });
+      timeouts.push(finishedTimeout);
     }
 
-    const timer = RoundStageTimerDone.ifEnabled(
-      game.round,
-      game.rules.timeLimits
-    );
+    const timer = RoundStageTimerDone.ifEnabled(game.round, game.rules.stages);
     if (timer !== undefined) {
       timeouts.push(timer);
     }

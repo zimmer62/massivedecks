@@ -62,35 +62,37 @@ export type Control = "Human" | "Computer";
 /**
  * If the user is playing.
  */
-export const isPlaying: (user: User) => boolean = user =>
+export const isPlaying: (user: User) => boolean = (user) =>
   user.role === "Player";
 
 /**
  * If the user is spectating.
  */
-export const isSpectating: (user: User) => boolean = user =>
+export const isSpectating: (user: User) => boolean = (user) =>
   user.role === "Spectator";
 
 /**
  * Create a new user.
  * @param registration The details of the user to create.
+ * @param role The role the user will have in the game.
  * @param privilege The level of privilege the user has.
  */
 export const create = (
   registration: RegisterUser,
+  role: Role,
   privilege: Privilege = "Unprivileged"
 ): User => ({
   name: registration.name,
   presence: "Joined",
   connection: "Connected",
-  privilege: privilege,
+  privilege,
   control: "Human",
-  role: "Player"
+  role,
 });
 
 /**
  * Gives a version of the user with only publicly visible properties.
  */
-export const censor: (user: User) => Public = user => ({
-  ...user
+export const censor: (user: User) => Public = (user) => ({
+  ...user,
 });

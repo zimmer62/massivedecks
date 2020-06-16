@@ -13,7 +13,7 @@ pack =
     { code = "it"
     , name = Italian
     , translate = translate
-    , recommended = "cah-base-en" |> BuiltIn.Id |> Source.BuiltIn
+    , recommended = "cah-base-en" |> BuiltIn.hardcoded |> Source.BuiltIn
     }
 
 
@@ -88,11 +88,19 @@ translate mdString =
         NewGame ->
             [ Text "Nuovo" ]
 
+        -- TODO: Translate
+        NewGameDescription ->
+            [ Missing ]
+
         FindPublicGame ->
             [ Text "Trova" ]
 
         JoinPrivateGame ->
             [ Text "Partecipa" ]
+
+        -- TODO: Translate
+        JoinPrivateGameDescription ->
+            [ Missing ]
 
         PlayGame ->
             [ Text "Gioca" ]
@@ -138,6 +146,14 @@ translate mdString =
 
         YouWereKicked ->
             [ Text "Sei stato espulso dal gioco." ]
+
+        -- TODO: Translate
+        ScrollToTop ->
+            [ Missing ]
+
+        -- TODO: Translate
+        Copy ->
+            [ Missing ]
 
         -- Rules
         CardsAgainstHumanity ->
@@ -298,6 +314,14 @@ translate mdString =
         HouseRuleRandoCardrissianNumberDescription ->
             [ Text "Il numero di giocatori IA che saranno presenti nel gioco." ]
 
+        -- TODO: Translate
+        HouseRuleNeverHaveIEver ->
+            [ Missing ]
+
+        -- TODO: Translate
+        HouseRuleNeverHaveIEverDescription ->
+            [ Missing ]
+
         MustBeMoreThanOrEqualValidationError { min } ->
             [ Text "Il valore deve essere almeno ", Text (String.fromInt min), Text "." ]
 
@@ -318,6 +342,9 @@ translate mdString =
 
         MissingLanguage ->
             [ Text "Non vedi la tua lingua? ", Ref TranslationBeg ]
+
+        AutonymFormat { autonym } ->
+            [ Text "(", Text autonym, Text ")" ]
 
         TranslationBeg ->
             [ Text "Aiuta a tradurre "
@@ -423,6 +450,22 @@ translate mdString =
         Deck ->
             [ Text "Mazzo" ]
 
+        -- TODO: Translate
+        DeckSource ->
+            [ Missing ]
+
+        -- TODO: Translate
+        DeckLanguage { language } ->
+            [ Missing ]
+
+        -- TODO: Translate
+        DeckAuthor { author } ->
+            [ Missing ]
+
+        -- TODO: Translate
+        DeckTranslator { translator } ->
+            [ Missing ]
+
         StillPlaying ->
             [ Text "Sta giocando" ]
 
@@ -487,11 +530,11 @@ translate mdString =
         -- Lobby
         -- TODO: Translate
         LobbyNameLabel ->
-            [ Text "Game Name" ]
+            [ Missing ]
 
         -- TODO: Translate
         DefaultLobbyName { owner } ->
-            [ Text owner, Text "'s Game" ]
+            [ Missing ]
 
         Invite ->
             [ Text "Invita giocatori al gioco." ]
@@ -714,6 +757,10 @@ translate mdString =
             , Text "."
             ]
 
+        -- TODO: Translate
+        AddBlankCards { amount } ->
+            [ Missing ]
+
         AddDeck ->
             [ Text "Aggiungi mazzo." ]
 
@@ -726,18 +773,33 @@ translate mdString =
         SourceServiceFailure { source } ->
             [ Ref source, Text " non ha potuto fornire il mazzo. Prova più tardi o prova un’altra sorgente." ]
 
-        Cardcast ->
-            [ Text "Cardcast" ]
+        -- TODO: Translate
+        ManyDecks ->
+            [ Missing ]
 
-        CardcastPlayCode ->
-            [ Ref Cardcast, Text " Play Code" ]
+        -- TODO: Translate
+        ManyDecksDeckCodeTitle ->
+            [ Missing ]
 
-        CardcastEmptyPlayCode ->
-            [ Text "Inserisci il ", Ref CardcastPlayCode, Text " per il mazzo che vuoi aggiungere." ]
+        -- TODO: Translate
+        ManyDecksDeckCodeShort ->
+            [ Missing ]
+
+        -- TODO: Translate
+        ManyDecksWhereToGet ->
+            [ Missing ]
+
+        -- TODO: Translate
+        JsonAgainstHumanity ->
+            [ Missing ]
+
+        -- TODO: Translate
+        JsonAgainstHumanityAbout ->
+            [ Missing ]
 
         -- TODO: Translate
         BuiltIn ->
-            [ Text "Built-in" ]
+            [ Missing ]
 
         APlayer ->
             [ Text "Un giocatore" ]
@@ -831,6 +893,14 @@ translate mdString =
         LobbyPasswordDescription ->
             [ Text "La password che gli utenti devono inserire per partecipare al gioco." ]
 
+        -- TODO: Translate
+        AudienceMode ->
+            [ Missing ]
+
+        -- TODO: Translate
+        AudienceModeDescription ->
+            [ Missing ]
+
         StartGame ->
             [ Text "Inizia gioco" ]
 
@@ -863,14 +933,38 @@ translate mdString =
         PlayingTimeLimitDescription ->
             [ Text "Quanto tempo (in secondi) i ", Ref Players, Text " hanno per fare la giocata." ]
 
+        -- TODO: Translate
+        PlayingAfterDescription ->
+            [ Missing ]
+
         RevealingTimeLimitDescription ->
             [ Text "Quanto tempo (in secondi) il ", Ref Czar, Text " ha per rivelare le giocate." ]
+
+        -- TODO: Translate
+        RevealingAfterDescription ->
+            [ Missing ]
 
         JudgingTimeLimitDescription ->
             [ Text "Quanto tempo (in secondi) il ", Ref Czar, Text " ha per giudicare le giocate." ]
 
         CompleteTimeLimitDescription ->
             [ Text "Quanto tempo (in secondi) attendere dopo un turno prima di iniziare quello sucessivo." ]
+
+        -- TODO: Translate
+        RevealingEnabledTitle ->
+            [ Missing ]
+
+        -- TODO: Translate
+        RevealingEnabled ->
+            [ Missing ]
+
+        -- TODO: Translate
+        DuringTitle ->
+            [ Missing ]
+
+        -- TODO: Translate
+        AfterTitle ->
+            [ Missing ]
 
         Conflict ->
             [ Text "Conflitto" ]
@@ -885,6 +979,18 @@ translate mdString =
 
         TheirChanges ->
             [ Text "Le sue modifiche" ]
+
+        -- TODO: Translate
+        ConfigurationDisabledWhileInGame ->
+            [ Missing ]
+
+        -- TODO: Translate
+        ConfigurationDisabledIfNotPrivileged ->
+            [ Missing ]
+
+        -- TODO: Translate
+        ConfigureNextGame ->
+            [ Missing ]
 
         -- Game
         SubmitPlay ->
@@ -940,6 +1046,14 @@ translate mdString =
         ClientAway ->
             [ Text "Sei impostato come Allontanato e non stai giocando." ]
 
+        -- TODO: Translate
+        Discard ->
+            [ Missing ]
+
+        -- TODO: Translate
+        Discarded { player } ->
+            [ Missing ]
+
         -- Instructions
         PlayInstruction { numberOfCards } ->
             [ Text "Devi scegliere altre "
@@ -986,6 +1100,10 @@ translate mdString =
         Refresh ->
             [ Text "Aggiorna" ]
 
+        -- TODO: Translate
+        Accept ->
+            [ Missing ]
+
         -- Errors
         Error ->
             [ Text "Errore" ]
@@ -997,6 +1115,14 @@ translate mdString =
 
         ErrorHelpTitle ->
             [ Text "Spiacenti, qualcosa è andato storto." ]
+
+        -- TODO: Translate
+        ErrorCheckOutOfBand ->
+            [ Missing ]
+
+        -- TODO: Translate
+        TwitterHandle ->
+            [ Missing ]
 
         ReportError ->
             [ Text "Segnala bug" ]

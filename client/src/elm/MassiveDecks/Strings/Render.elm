@@ -1,18 +1,26 @@
 module MassiveDecks.Strings.Render exposing (asHtml, asString)
 
+import FontAwesome.Brands as Icon
 import FontAwesome.Icon as Icon exposing (Icon)
-import FontAwesome.Regular as RegularIcon
 import FontAwesome.Solid as Icon
 import Html as Html exposing (Html)
 import Html.Attributes as HtmlA
-import MassiveDecks.Strings exposing (..)
+import MassiveDecks.Card.Source.Model as Source
+import MassiveDecks.Icon as Icon
+import MassiveDecks.Model exposing (Shared)
+import MassiveDecks.Strings as Strings exposing (..)
+import MassiveDecks.Strings.Languages.En as En
 import MassiveDecks.Strings.Languages.Model exposing (Language)
 import MassiveDecks.Strings.Translation as Translation
 import MassiveDecks.Util.Html as Html
 
 
 type alias Context =
-    ( Language, MdString -> List Translation.Result )
+    { lang : Language
+    , translate : MdString -> List Translation.Result
+    , parent : MdString
+    , shared : Shared
+    }
 
 
 {-| Build an actual string from an `MdString` in the user's language.
@@ -42,11 +50,11 @@ resultsToString context results =
 resultToString : Context -> Translation.Result -> String
 resultToString context result =
     let
-        ( _, translate ) =
+        { translate, parent } =
             context
 
         mdStringToString =
-            \mdString -> mdString |> translate |> resultsToString context
+            \mdString -> mdString |> translate |> resultsToString { context | parent = mdString }
 
         partsToString =
             List.map (resultToString context) >> String.join ""
@@ -67,6 +75,9 @@ resultToString context result =
         Translation.Segment segment ->
             partsToString segment
 
+        Translation.Missing ->
+            En.pack.translate parent |> partsToString
+
 
 resultsToHtml : Context -> List Translation.Result -> List (Html msg)
 resultsToHtml context results =
@@ -76,24 +87,46 @@ resultsToHtml context results =
 resultToHtml : Context -> Translation.Result -> List (Html msg)
 resultToHtml context result =
     let
-        ( _, translate ) =
+        { translate, parent } =
             context
     in
     case result of
         Translation.Ref mdString ->
-            mdString |> translate |> resultsToHtml context |> enhanceHtml context mdString
+            let
+                childContext =
+                    { context | parent = mdString }
+            in
+            mdString
+                |> translate
+                |> resultsToHtml childContext
+                |> enhanceHtml childContext mdString
 
         Translation.Text text ->
             [ Html.text text ]
 
         Translation.Raw mdString ->
-            [ mdString |> translate |> resultsToString context |> Html.text ]
+            [ mdString |> translate |> resultsToString { context | parent = mdString } |> Html.text ]
 
         Translation.Em emphasised ->
-            [ Html.strong [] (emphasised |> List.concatMap (resultToHtml context)) ]
+            [ Html.strong [] (emphasised |> resultsToHtml context) ]
 
         Translation.Segment cluster ->
-            [ Html.span [ HtmlA.class "segment" ] (cluster |> List.concatMap (resultToHtml context)) ]
+            [ Html.span [ HtmlA.class "segment" ] (cluster |> resultsToHtml context) ]
+
+        Translation.Missing ->
+            let
+                english =
+                    Html.span [ HtmlA.class "string", HtmlA.lang "en" ]
+                        (En.pack.translate parent |> resultsToHtml context)
+
+                translationBeg =
+                    Html.blankA
+                        [ HtmlA.href "https://github.com/Lattyware/massivedecks/wiki/Translation"
+                        , Strings.TranslationBeg |> asString context |> HtmlA.title
+                        ]
+                        [ Icon.language |> Icon.viewIcon ]
+            in
+            [ Html.span [ HtmlA.class "not-translated" ] [ english, Html.text " ", translationBeg ] ]
 
 
 enhanceHtml : Context -> MdString -> List (Html msg) -> List (Html msg)
@@ -106,10 +139,10 @@ enhanceHtml context mdString unenhanced =
             term context CzarDescription Icon.gavel unenhanced
 
         Call ->
-            term context CallDescription Icon.square unenhanced
+            term context CallDescription Icon.callCard unenhanced
 
         Response ->
-            term context ResponseDescription RegularIcon.square unenhanced
+            term context ResponseDescription Icon.responseCard unenhanced
 
         Point ->
             term context PointDescription Icon.star unenhanced
@@ -174,6 +207,9 @@ enhanceHtml context mdString unenhanced =
         HouseRuleRandoCardrissian ->
             prefixed unenhanced Icon.robot
 
+        HouseRuleNeverHaveIEver ->
+            prefixed unenhanced Icon.trash
+
         RereadGames ->
             [ Html.blankA [ HtmlA.class "no-wrap", HtmlA.href "https://www.rereadgames.com/" ] unenhanced ]
 
@@ -185,6 +221,9 @@ enhanceHtml context mdString unenhanced =
 
         TranslationBeg ->
             [ Html.blankA [ HtmlA.href "https://github.com/Lattyware/massivedecks/wiki/Translation" ] unenhanced ]
+
+        TwitterHandle ->
+            [ Html.blankA [ HtmlA.href "https://twitter.com/Massive_Decks" ] (suffixed unenhanced Icon.twitter) ]
 
         Error ->
             prefixed unenhanced Icon.exclamationTriangle
@@ -198,14 +237,27 @@ enhanceHtml context mdString unenhanced =
         SettingsTitle ->
             prefixed unenhanced Icon.cog
 
-        CardcastPlayCode ->
-            [ Html.blankA [ HtmlA.href "https://www.cardcastgame.com/browse" ] unenhanced ]
-
         StillPlaying ->
             term context PlayingDescription Icon.clock unenhanced
 
         Played ->
             term context PlayedDescription Icon.check unenhanced
+
+        ManyDecks ->
+            case context.shared.sources.manyDecks of
+                Just { baseUrl } ->
+                    [ Html.blankA [ HtmlA.href baseUrl ] unenhanced ]
+
+                Nothing ->
+                    unenhanced
+
+        JsonAgainstHumanity ->
+            case context.shared.sources.jsonAgainstHumanity of
+                Just { aboutUrl } ->
+                    [ Html.blankA [ HtmlA.href aboutUrl ] unenhanced ]
+
+                Nothing ->
+                    unenhanced
 
         _ ->
             unenhanced

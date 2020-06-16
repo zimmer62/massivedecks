@@ -29,22 +29,78 @@
       // Ids for decks in the order they will be presented to the user.
       // The game will look for these in the directory given by basePath above, and will expect them to have the
       // .deck.json5 extension.
-      decks: [
-        "cah-base-en"
-      ]
+      decks: ["cah-base-en", "cah-base-ptbr"],
     },
 
-    // Allows players to load decks from Cardcast via their API. https://www.cardcastgame.com/
-    cardcast: {
-      // How long to wait for a response from the Cardcast API service before giving up and telling the user there is a
-      // problem.
+    // Allows players to load decks from Many Decks.
+    manyDecks: {
+      baseUrl: "https://decks.rereadgames.com/",
+
+      // How long to wait for a response from Many Decks before giving up and telling the user there is a problem.
       timeout: "PT10S",
 
-      // The number of connections the server can make to Cardcast at one time.
-      // Please remember this is a service provided by Cardcast, and you should make best efforts to ensure you don't
-      // hit them too hard, including not setting this too high.
-      simultaneousConnections: 1
-    }
+      // The number of connections the server can make to Many Decks at one time.
+      simultaneousConnections: 2,
+    },
+
+    // Allows players to use decks from JSON Against Humanity
+    jsonAgainstHumanity: {
+      aboutUrl: "https://github.com/crhallberg/json-against-humanity",
+      url: "https://raw.githubusercontent.com/crhallberg/json-against-humanity/v2/compact.md.json",
+    },
+  },
+
+  // The default configuration for new lobbies when they are created.
+  // There is no default name here as that is managed by the client.
+  defaults: {
+    rules: {
+      handSize: 10,
+      scoreLimit: 25,
+      houseRules: {
+        // packingHeat: {},
+        // reboot: { cost: 1 },
+        // comedyWriter: { number: 300, exclusive: true },
+        // rando: { number: 1 },
+        // neverHaveIEver: {}
+      },
+      stages: {
+        timeLimitMode: "Soft",
+        playing: {
+          duration: 60,
+          after: 2,
+        },
+        revealing: {
+          duration: 45,
+          after: 2,
+        },
+        judging: {
+          duration: 20,
+          after: 2,
+        },
+      },
+    },
+    public: false,
+    audienceMode: false,
+    decks: [
+      // {
+      //   // A built-in deck.
+      //   source: "BuiltIn",
+      //   // The id (filename without `.deck.json5`.
+      //   id: "cah-base-en",
+      // },
+      // {
+      //   // A deck from JSON Against Humanity
+      //   source: "JAH",
+      //   // The id can be found in the JSON as the key for the deck.
+      //   id: "Base",
+      // },
+      // {
+      //   // A deck from Many Decks
+      //   source: "ManyDecks",
+      //   // The deck code, as given on Many Decks.
+      //   deckCode: "ABCDE",
+      // },
+    ],
   },
 
   // Timeouts determine how long the server waits before taking certain actions.
@@ -58,10 +114,6 @@
 
     // How long to wait before marking a player as disconnected.
     disconnectionGracePeriod: "PT2S",
-
-    // How long to wait after everyone has played to begin the revealing phase. Having this as a non-zero value lets
-    // the last person playing
-    finishedPlayingDelay: "PT2S"
   },
 
   // Tasks are things that take some time to happen (e.g: requesting data from external card services).
@@ -72,7 +124,7 @@
     rateLimit: 20,
     // How often to process queued tasks. Setting this too high will result in games being slowed down a lot when the
     // rate limit is hit (an ISO 8601 duration).
-    processTickFrequency: "PT0.5S"
+    processTickFrequency: "PT0.5S",
   },
 
   // How to store game data.
@@ -91,10 +143,10 @@
     //   keepAlive: false,
     // },
 
-    // How long to allow without any activity before garbage collecting the game.
+    // How long to allow without any activity before garbage collecting the game (an ISO 8601 duration).
     abandonedTime: "PT15M",
     // How often to delete abandoned/finished games (an ISO 8601 duration).
-    garbageCollectionFrequency: "PT5M"
+    garbageCollectionFrequency: "PT5M",
   },
 
   // How to cache game data.
@@ -114,7 +166,7 @@
     // },
 
     // How old a cached value should be before we check to see if we should update it on a hit.
-    checkAfter: "PT5M"
+    checkAfter: "PT5M",
   },
 
   // A file to touch when the server is started. If null, we won't touch any files.
@@ -122,6 +174,6 @@
   // This will be overwritten by the environment variable MD_TOUCH_ON_START, if set.
 
   // The version of Massive Decks.
-  version: "dev"
+  version: "dev",
   // This will be overwritten by the environment variable MD_VERSION, if set.
 }

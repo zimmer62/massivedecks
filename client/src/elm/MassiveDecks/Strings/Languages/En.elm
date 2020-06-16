@@ -15,7 +15,7 @@ pack =
     { code = "en"
     , name = English
     , translate = translate
-    , recommended = "cah-base-en" |> BuiltIn.Id |> Source.BuiltIn
+    , recommended = "cah-base-en" |> BuiltIn.hardcoded |> Source.BuiltIn
     }
 
 
@@ -72,11 +72,17 @@ translate mdString =
         NewGame ->
             [ Text "New" ]
 
+        NewGameDescription ->
+            [ Text "Start a new game of ", Ref MassiveDecks, Text "." ]
+
         FindPublicGame ->
             [ Text "Find" ]
 
         JoinPrivateGame ->
             [ Text "Join" ]
+
+        JoinPrivateGameDescription ->
+            [ Text "Join a game someone invited you to." ]
 
         PlayGame ->
             [ Text "Play" ]
@@ -122,6 +128,12 @@ translate mdString =
 
         YouWereKicked ->
             [ Text "You were kicked from the game." ]
+
+        ScrollToTop ->
+            [ Text "Scroll to the top." ]
+
+        Copy ->
+            [ Text "Copy" ]
 
         -- Rules
         CardsAgainstHumanity ->
@@ -282,6 +294,14 @@ translate mdString =
         HouseRuleRandoCardrissianNumberDescription ->
             [ Text "The number of AI players that will be in the game." ]
 
+        HouseRuleNeverHaveIEver ->
+            [ Text "Never Have I Ever" ]
+
+        HouseRuleNeverHaveIEverDescription ->
+            [ Text "At any time, a player may discard cards they don't understand, however, they must confess their "
+            , Text "ignorance: the card is shared publicly."
+            ]
+
         MustBeMoreThanOrEqualValidationError { min } ->
             [ Text "The value must be at least ", Text (String.fromInt min), Text "." ]
 
@@ -302,6 +322,9 @@ translate mdString =
 
         MissingLanguage ->
             [ Text "Don’t see your language? ", Ref TranslationBeg ]
+
+        AutonymFormat { autonym } ->
+            [ Text "(", Text autonym, Text ")" ]
 
         TranslationBeg ->
             [ Text "Help translate "
@@ -406,6 +429,18 @@ translate mdString =
 
         Deck ->
             [ Text "Deck" ]
+
+        DeckSource ->
+            [ Ref Deck, Text " Source" ]
+
+        DeckLanguage { language } ->
+            [ Text "in ", Text language ]
+
+        DeckAuthor { author } ->
+            [ Text "by ", Text author ]
+
+        DeckTranslator { translator } ->
+            [ Text "translation by ", Text translator ]
 
         StillPlaying ->
             [ Text "Playing" ]
@@ -625,7 +660,7 @@ translate mdString =
             [ Text "End the game now." ]
 
         ReturnViewToGame ->
-            [ Text "Return" ]
+            [ Text "Return to game" ]
 
         ReturnViewToGameDescription ->
             [ Text "Return to the main game view." ]
@@ -696,6 +731,13 @@ translate mdString =
             , Text "."
             ]
 
+        AddBlankCards { amount } ->
+            [ Text "Add "
+            , amount |> String.fromInt |> Text
+            , Text " blank "
+            , Ref (Plural { singular = Response, amount = Just amount })
+            ]
+
         AddDeck ->
             [ Text "Add deck." ]
 
@@ -708,14 +750,23 @@ translate mdString =
         SourceServiceFailure { source } ->
             [ Ref source, Text " failed to provide the deck. Please try again later or try another source." ]
 
-        Cardcast ->
-            [ Text "Cardcast" ]
+        ManyDecks ->
+            [ Text "Many Decks" ]
 
-        CardcastPlayCode ->
-            [ Ref Cardcast, Text " Play Code" ]
+        ManyDecksDeckCodeTitle ->
+            [ Text "Deck Code" ]
 
-        CardcastEmptyPlayCode ->
-            [ Text "Enter a ", Ref CardcastPlayCode, Text " for the deck you want to add." ]
+        ManyDecksDeckCodeShort ->
+            [ Text "A deck code must be at least five characters long." ]
+
+        ManyDecksWhereToGet ->
+            [ Text "You can create and find decks to play with at ", Ref ManyDecks, Text "." ]
+
+        JsonAgainstHumanity ->
+            [ Text "JSON Against Humanity" ]
+
+        JsonAgainstHumanityAbout ->
+            [ Text "Decks provided by ", Ref JsonAgainstHumanity ]
 
         BuiltIn ->
             [ Text "Built-in" ]
@@ -812,6 +863,14 @@ translate mdString =
         LobbyPasswordDescription ->
             [ Text "A password to users must enter before they can join the game." ]
 
+        AudienceMode ->
+            [ Text "Audience Mode" ]
+
+        AudienceModeDescription ->
+            [ Text "If enabled, newly joining users will be spectators by default, and only you will be able to "
+            , Text "make them players."
+            ]
+
         StartGame ->
             [ Text "Start Game" ]
 
@@ -844,14 +903,35 @@ translate mdString =
         PlayingTimeLimitDescription ->
             [ Text "How long (in seconds) the ", Ref Players, Text " have to make their plays." ]
 
+        PlayingAfterDescription ->
+            [ Text "How long (in seconds) players have to change their play before the next stage starts." ]
+
         RevealingTimeLimitDescription ->
             [ Text "How long (in seconds) the ", Ref Czar, Text " has to reveal the plays." ]
+
+        RevealingAfterDescription ->
+            [ Text "How long (in seconds) to wait after the last card is revealed before the next stage starts." ]
 
         JudgingTimeLimitDescription ->
             [ Text "How long (in seconds) the ", Ref Czar, Text " has to judge the plays." ]
 
         CompleteTimeLimitDescription ->
             [ Text "How much time (in seconds) to wait after one round ends before starting the next one." ]
+
+        RevealingEnabledTitle ->
+            [ Text "Czar Reveals Plays" ]
+
+        RevealingEnabled ->
+            [ Text "If this is enabled, the "
+            , Ref Czar
+            , Text " reveals one play at a time before picking a winner."
+            ]
+
+        DuringTitle ->
+            [ Text "Time Limit" ]
+
+        AfterTitle ->
+            [ Text "After" ]
 
         Conflict ->
             [ Text "Conflict" ]
@@ -866,6 +946,15 @@ translate mdString =
 
         TheirChanges ->
             [ Text "Their Changes" ]
+
+        ConfigurationDisabledWhileInGame ->
+            [ Text "While the game in progress, you can't change the configuration." ]
+
+        ConfigurationDisabledIfNotPrivileged ->
+            [ Text "You can't change the configuration of this game." ]
+
+        ConfigureNextGame ->
+            [ Text "Configure Next Game" ]
 
         -- Game
         SubmitPlay ->
@@ -921,6 +1010,14 @@ translate mdString =
         ClientAway ->
             [ Text "You are currently set as away from the game, and are not playing." ]
 
+        Discard ->
+            [ Text "Discard the selected card, revealing it to the other users in the game." ]
+
+        Discarded { player } ->
+            [ Text player
+            , Text " discarded the following card:"
+            ]
+
         -- Instructions
         PlayInstruction { numberOfCards } ->
             [ Text "You need to choose "
@@ -967,6 +1064,9 @@ translate mdString =
         Refresh ->
             [ Text "Refresh" ]
 
+        Accept ->
+            [ Text "OK" ]
+
         -- Errors
         Error ->
             [ Text "Error" ]
@@ -978,6 +1078,12 @@ translate mdString =
 
         ErrorHelpTitle ->
             [ Text "Sorry, something went wrong." ]
+
+        ErrorCheckOutOfBand ->
+            [ Text "Please check ", Ref TwitterHandle, Text " for updates and service status. The game server will go down for a short time when a new version is released, so if you see a recent update, try again in a few minutes." ]
+
+        TwitterHandle ->
+            [ Text "@Massive_Decks" ]
 
         ReportError ->
             [ Text "Report Bug" ]

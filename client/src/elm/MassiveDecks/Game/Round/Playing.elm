@@ -8,11 +8,13 @@ import Html exposing (Html)
 import Html.Attributes as HtmlA
 import Html.Events as HtmlE
 import Html.Keyed as HtmlK
+import Html5.DragDrop as DragDrop
+import List.Extra as List
 import MassiveDecks.Card as Card
 import MassiveDecks.Card.Call as Call
 import MassiveDecks.Card.Model as Card
+import MassiveDecks.Card.Parts as Parts
 import MassiveDecks.Card.Response as Response
-import MassiveDecks.Card.Source.Model as Source
 import MassiveDecks.Game.Action.Model as Action
 import MassiveDecks.Game.Messages as Game exposing (Msg)
 import MassiveDecks.Game.Model exposing (..)
@@ -23,7 +25,8 @@ import MassiveDecks.Pages.Lobby.Configure.Model exposing (Config)
 import MassiveDecks.Pages.Lobby.Model as Lobby
 import MassiveDecks.Strings as Strings
 import MassiveDecks.User as User exposing (User)
-import MassiveDecks.Util.List as List
+import MassiveDecks.Util.Html as Html
+import MassiveDecks.Util.Html.Attributes as HtmlA
 import MassiveDecks.Util.Random as Random
 import Random
 import Set exposing (Set)
@@ -43,13 +46,13 @@ init wrap round pick =
 
 
 view : (Msg -> msg) -> Lobby.Auth -> Shared -> Config -> Dict User.Id User -> Model -> Round.Playing -> RoundView msg
-view wrap auth shared config users model round =
+view wrap auth shared config _ model round =
     let
         slots =
             Call.slotCount round.call
 
         missingFromPick =
-            slots - (round.pick.cards |> List.length)
+            slots - (round.pick.cards |> Dict.size)
 
         self =
             auth.claims.uid
@@ -74,17 +77,45 @@ view wrap auth shared config users model round =
                 ( Nothing, Strings.NotInRoundInstruction, True )
 
         hand =
-            HtmlK.ul [ HtmlA.classList [ ( "hand", True ), ( "cards", True ), ( "not-playing", notPlaying ) ] ]
+            HtmlK.ul
+                [ HtmlA.classList
+                    [ ( "hand", True )
+                    , ( "cards", True )
+                    , ( "not-playing", notPlaying )
+                    , ( "show-slot-indices", slots > 1 )
+                    , ( "pick-full", missingFromPick < 1 )
+                    ]
+                ]
                 (model.hand |> List.map (round.pick.cards |> viewHandCard wrap shared config model.filledCards))
 
         backgroundPlays =
             Html.div [ HtmlA.class "background-plays" ]
                 (round.players |> Set.toList |> List.map (viewBackgroundPlay shared model.playStyles slots round.played))
 
+        fillCustom _ p =
+            List.find (\c -> c.details.id == p) model.hand
+                |> Maybe.map (Card.fillFromDict model.filledCards >> .body)
+                |> Maybe.withDefault ""
+
         picked =
-            round.pick.cards
-                |> List.filterMap (\p -> List.find (\c -> c.details.id == p) model.hand)
-                |> List.map (Card.fillFromDict model.filledCards)
+            round.pick.cards |> Dict.map fillCustom
+
+        showNonObviousSlotIndices =
+            if round.call.body |> Parts.nonObviousSlotIndices then
+                [ HtmlA.class "show-slot-indices" ]
+
+            else
+                []
+
+        slotAttrs i =
+            List.concat
+                [ [ Game.Unpick i |> wrap |> HtmlE.onClick ]
+                , DragDrop.droppable (Game.Drag >> wrap) i
+                , round.pick.cards
+                    |> Dict.get i
+                    |> Maybe.map (DragDrop.draggable (Game.Drag >> wrap))
+                    |> Maybe.withDefault []
+                ]
     in
     { instruction = Just instruction
     , action = action
@@ -93,7 +124,9 @@ view wrap auth shared config users model round =
             [ hand
             , backgroundPlays
             ]
+    , slotAttrs = slotAttrs
     , fillCallWith = picked
+    , roundAttrs = List.concat [ [ HtmlA.class "playing" ], showNonObviousSlotIndices ]
     }
 
 
@@ -101,11 +134,26 @@ view wrap auth shared config users model round =
 {- Private -}
 
 
-viewHandCard : (Msg -> msg) -> Shared -> Config -> Dict Card.Id String -> List Card.Id -> Card.Response -> ( String, Html msg )
+viewHandCard : (Msg -> msg) -> Shared -> Config -> Dict Card.Id String -> Dict Int Card.Id -> Card.Response -> ( String, Html msg )
 viewHandCard wrap shared config filled picked response =
     let
         details =
             response.details
+
+        pick =
+            picked |> Dict.filter (\_ v -> v == details.id) |> Dict.toList |> List.head
+
+        pickedForSlot ( i, _ ) =
+            HtmlA.attribute "data-picked-for-slot-index" (i + 1 |> String.fromInt)
+
+        attrs =
+            List.concat
+                [ [ HtmlA.classList [ ( "picked", pick /= Nothing ) ]
+                  , pick |> Maybe.map pickedForSlot |> Maybe.withDefault HtmlA.nothing
+                  , details.id |> Game.Pick Nothing |> wrap |> HtmlE.onClick
+                  ]
+                , DragDrop.draggable (Game.Drag >> wrap) details.id
+                ]
     in
     ( details.id
     , Response.viewPotentiallyCustom
@@ -114,9 +162,7 @@ viewHandCard wrap shared config filled picked response =
         Card.Front
         (\v -> Game.EditBlank details.id v |> wrap)
         (\v -> Game.Fill details.id v |> wrap)
-        [ HtmlA.classList [ ( "picked", picked |> List.member details.id ) ]
-        , details.id |> Game.Pick |> wrap |> HtmlE.onClick
-        ]
+        attrs
         filled
         response
     )
@@ -125,7 +171,6 @@ viewHandCard wrap shared config filled picked response =
 viewBackgroundPlay : Shared -> PlayStyles -> Int -> Set User.Id -> User.Id -> Html msg
 viewBackgroundPlay shared playStyles slots played for =
     let
-        -- TODO: Move to css variable --rotation when possible.
         cards =
             playStyles
                 |> Dict.get for
@@ -140,7 +185,7 @@ viewBackgroundPlay shared playStyles slots played for =
 viewBackgroundPlayCard : Shared -> CardStyle -> Html msg
 viewBackgroundPlayCard shared playStyle =
     Response.viewUnknown shared
-        [ "rotate(" ++ String.fromFloat playStyle.rotation ++ "turn)" |> HtmlA.style "transform"
+        [ "--rotation: " ++ String.fromFloat playStyle.rotation ++ "turn" |> HtmlA.attribute "style"
         , HtmlA.class "ignore-minimal-card-size"
         ]
 

@@ -88,7 +88,7 @@ init flags url key =
             , speech = speech
             , notifications = Notifications.init
             , remoteMode = remoteMode
-            , sources = { builtIn = Nothing, cardcast = False }
+            , sources = { builtIn = Nothing, manyDecks = Nothing, jsonAgainstHumanity = Nothing }
             }
 
         ( page, pageCmd ) =
@@ -350,7 +350,7 @@ view model =
         title =
             case model.page of
                 Pages.Lobby m ->
-                    m.lobby |> Maybe.map (\l -> l.config.name ++ " (" ++ (m.auth.claims.gc |> GameCode.toString) ++ ")")
+                    m.lobbyAndConfigure |> Maybe.map (\l -> l.lobby.config.name ++ " (" ++ (m.auth.claims.gc |> GameCode.toString) ++ ")")
 
                 _ ->
                     Nothing
@@ -377,10 +377,10 @@ handleLobbyMsg baseModel lobbyMsg lobbyModel =
         Lobby.Stay newLobbyModel ->
             ( { model | page = Pages.Lobby newLobbyModel }, lobbyCmd )
 
-        Lobby.AuthError gc authenticationError ->
+        Lobby.JoinError gc error ->
             let
                 ( page, changePageCmd ) =
-                    Start.initWithAuthError shared gc authenticationError
+                    Start.initWithError shared gc error
 
                 urlCommand =
                     page |> .route |> Route.Start |> Route.url |> Navigation.pushUrl shared.key

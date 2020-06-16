@@ -1,8 +1,9 @@
 import * as Cache from "../../cache";
 import * as Decks from "./decks";
-import { Cardcast } from "./sources/cardcast";
 import { Custom } from "./sources/custom";
 import { BuiltIn } from "./sources/builtIn";
+import { ManyDecks } from "./sources/many-decks";
+import { JsonAgainstHumanity } from "./sources/json-against-humanity";
 
 /**
  * A source for a card or deck.
@@ -12,7 +13,7 @@ export type Source = External | Custom;
 /**
  * An external source for a card or deck.
  */
-export type External = BuiltIn | Cardcast;
+export type External = BuiltIn | ManyDecks | JsonAgainstHumanity;
 
 /**
  * More information that can be looked up given a source.
@@ -26,6 +27,18 @@ export interface Details {
    * A link to more information about the source.
    */
   url?: string;
+  /**
+   * The name of the author of the deck.
+   */
+  author?: string;
+  /**
+   * The language tag for the language the deck is in.
+   */
+  language?: string;
+  /**
+   * The name of the translator of the deck.
+   */
+  translator?: string;
 }
 
 export interface Summary extends Cache.Tagged {
@@ -232,6 +245,10 @@ export class CachedResolver<S extends External> extends Resolver<S> {
  * Get resolvers for the given source type.
  */
 export interface MetaResolver<S extends External> {
+  /**
+   * If the source should be cached.
+   */
+  readonly cache: boolean;
   limitedResolver(source: S): LimitedResolver<S>;
   resolver(source: S): Resolver<S>;
 }

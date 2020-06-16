@@ -6,7 +6,6 @@ import { ConfigEditConflictError } from "../../errors/action-execution-error";
 import { InvalidActionError } from "../../errors/validation";
 import * as Event from "../../event";
 import * as Configured from "../../events/lobby-event/configured";
-import * as Sources from "../../games/cards/sources";
 import * as Rules from "../../games/rules";
 import * as HouseRules from "../../games/rules/houseRules";
 import * as Rando from "../../games/rules/rando";
@@ -106,6 +105,8 @@ function apply(
       version: existing.version + 1,
       rules: result,
       public: updated.public !== undefined ? updated.public : false,
+      audienceMode:
+        updated.audienceMode !== undefined ? updated.audienceMode : false,
     },
     events,
     tasks: allTasks,
@@ -164,7 +165,11 @@ class ConfigureActions extends Actions.Implementation<
         throw new InvalidActionError(`${error.name}: ${error.message}`);
       }
     }
-    validated = _validateConfig(patched);
+    try {
+      validated = _validateConfig(patched);
+    } catch (error) {
+      throw new InvalidActionError(`${error.name}: ${error.message}`);
+    }
     const { result, events, tasks } = apply(
       server,
       auth.gc,

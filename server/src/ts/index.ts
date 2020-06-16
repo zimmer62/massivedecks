@@ -89,10 +89,14 @@ async function main(): Promise<void> {
   });
 
   app.post("/api/games", async (req, res) => {
-    const { gameCode, token } = await state.store.newLobby(
+    const { gameCode, token, tasks } = await state.store.newLobby(
       CreateLobby.validate(req.body),
-      config.secret
+      config.secret,
+      config.defaults
     );
+    for (const task of tasks) {
+      state.tasks.enqueue(state, task);
+    }
     res.append(
       "Location",
       `${req.protocol}://${req.hostname}/${config.basePath}api/games/${gameCode}`
@@ -101,7 +105,7 @@ async function main(): Promise<void> {
   });
 
   app.post("/api/alive", async (req, res) => {
-    const result: { [key: string]: boolean } = {};
+    const result: string[] = [];
     for (const current of CheckAlive.validate(req.body).tokens) {
       try {
         const claims = Token.validate(
@@ -109,9 +113,11 @@ async function main(): Promise<void> {
           await state.store.id(),
           state.config.secret
         );
-        result[current] = await state.store.exists(claims.gc);
+        if (await state.store.exists(claims.gc)) {
+          result.push(current);
+        }
       } catch (error) {
-        result[current] = false;
+        // Ignore.
       }
     }
     res.json(result);
@@ -121,11 +127,14 @@ async function main(): Promise<void> {
     const gameCode: GameCode = req.params.gameCode;
 
     const registration = RegisterUser.validate(req.body);
-    const newUser = User.create(registration);
     const id = await Change.applyAndReturn(state, gameCode, (lobby) => {
       if (lobby.config.password !== registration.password) {
         throw new InvalidLobbyPasswordError();
       }
+      const newUser = User.create(
+        registration,
+        lobby.config.audienceMode ? "Spectator" : "Player"
+      );
       if (
         wu(Object.values(lobby.users)).find((u) => u.name === registration.name)
       ) {

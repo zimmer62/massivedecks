@@ -13,6 +13,10 @@ methods name =
         \_ ->
             { name = name |> Maybe.withDefault ""
             , url = Nothing
+            , author = Nothing
+            , translator = Nothing
+            , language = Nothing
             }
     , tooltip = \_ -> Nothing
+    , messages = \() -> []
     }

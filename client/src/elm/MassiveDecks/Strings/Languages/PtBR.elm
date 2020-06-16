@@ -11,10 +11,10 @@ import MassiveDecks.Strings.Translation as Translation exposing (Result(..))
 
 pack : Translation.Pack
 pack =
-    { code = "ptBR"
+    { code = "pt-BR"
     , name = BrazilianPortuguese
     , translate = translate
-    , recommended = "cah-base-en" |> BuiltIn.Id |> Source.BuiltIn
+    , recommended = "cah-base-ptbr" |> BuiltIn.hardcoded |> Source.BuiltIn
     }
 
 
@@ -89,11 +89,17 @@ translate mdString =
         NewGame ->
             [ Text "Novo" ]
 
+        NewGameDescription ->
+            [ Text "Começar um novo jogo de ", Ref MassiveDecks, Text "." ]
+
         FindPublicGame ->
             [ Text "Procurar" ]
 
         JoinPrivateGame ->
             [ Text "Entrar" ]
+
+        JoinPrivateGameDescription ->
+            [ Text "Entre num jogo que alguém te convidou." ]
 
         PlayGame ->
             [ Text "Jogar" ]
@@ -126,7 +132,7 @@ translate mdString =
             [ Text "Seu Nome" ]
 
         NameInUse ->
-            [ Text "Alguém está usando esse nome no jogo—por favor tente um diferente." ]
+            [ Text "Alguém está usando esse nome no jogo—por favor tente usar um nome diferente." ]
 
         RejoinTitle ->
             [ Text "Entrar novamente" ]
@@ -140,6 +146,12 @@ translate mdString =
         YouWereKicked ->
             [ Text "Você foi chutado do jogo." ]
 
+        ScrollToTop ->
+            [ Text "Rolar para o topo." ]
+
+        Copy ->
+            [ Text "Copiar" ]
+
         -- Rules
         CardsAgainstHumanity ->
             [ Text "Cartas Contra a Humanidade" ]
@@ -148,7 +160,7 @@ translate mdString =
             [ Text "Como jogar." ]
 
         RulesHand ->
-            [ Text "Cada jogador tem uma mão de ", Ref (Plural { singular = Response, amount = Nothing }), Text "." ]
+            [ Text "Cada jogador terá uma mão de ", Ref (Plural { singular = Response, amount = Nothing }), Text "." ]
 
         RulesCzar ->
             [ Text "O primeiro jogador começa como "
@@ -193,17 +205,17 @@ translate mdString =
 
         ExamplePickDescription ->
             [ Ref (Plural { singular = Call, amount = Nothing })
-            , Text " cartas como essa precisam de mais "
+            , Text " como essa precisam de mais "
             , Ref (Plural { singular = Response, amount = Nothing })
-            , Text ", mas te dão mais cartas para escolher."
+            , Text " como resposta, mas te dão mais opções para escolher."
             ]
 
         RulesDraw ->
             [ Text "Algumas "
             , Ref (Plural { singular = Call, amount = Nothing })
-            , Text " precisam de ainda mais "
+            , Text " precisam de mais de uma "
             , Ref (Plural { singular = Response, amount = Nothing })
-            , Text "—elas vão dizer "
+            , Text " como resposta—elas também vão dizer "
             , Ref (Draw { numberOfCards = 2 })
             , Text " ou mais, e você ganhará essa quantidade de cartas extras antes de jogar."
             ]
@@ -241,7 +253,7 @@ translate mdString =
             [ Text "Custo de ", Ref (Plural { singular = Point, amount = Nothing }) ]
 
         HouseRuleRebootCostDescription ->
-            [ Text "Quantos ", Ref (Plural { singular = Point, amount = Nothing }), Text " custa para trocar as cartas." ]
+            [ Text "Quantos ", Ref (Plural { singular = Point, amount = Nothing }), Text " custam para trocar as cartas." ]
 
         HouseRulePackingHeat ->
             [ Text "Calor da Embalagem" ]
@@ -251,9 +263,9 @@ translate mdString =
             , Ref (Plural { singular = Call, amount = Nothing })
             , Text " com "
             , Ref (Pick { numberOfCards = 2 })
-            , Text " também tem "
+            , Text " também vem com "
             , Ref (Draw { numberOfCards = 1 })
-            , Text ", com isso todos tem mais opções de escolha."
+            , Text ", com isso todos terão mais opções de escolha."
             ]
 
         HouseRuleComedyWriter ->
@@ -271,7 +283,7 @@ translate mdString =
         HouseRuleComedyWriterNumberDescription ->
             [ Text "O número de "
             , Ref (Plural { singular = Response, amount = Nothing })
-            , Text "vazias que estarão no joogo."
+            , Text " vazias que estarão no jogo."
             ]
 
         HouseRuleComedyWriterExclusive ->
@@ -299,6 +311,14 @@ translate mdString =
         HouseRuleRandoCardrissianNumberDescription ->
             [ Text "O número de jogadores IA que estarão no jogo." ]
 
+        HouseRuleNeverHaveIEver ->
+            [ Text "Eu Nunca" ]
+
+        HouseRuleNeverHaveIEverDescription ->
+            [ Text "A qualquer momento, um jogador pode descartar as cartas que ele não entende, porém, ele deve confessar sua "
+            , Text "ignorância: a carta é compartilhada publicamente."
+            ]
+
         MustBeMoreThanOrEqualValidationError { min } ->
             [ Text "O valor deve ser ao menos ", Text (String.fromInt min), Text "." ]
 
@@ -319,6 +339,9 @@ translate mdString =
 
         MissingLanguage ->
             [ Text "Não vê seu idioma? ", Ref TranslationBeg ]
+
+        AutonymFormat { autonym } ->
+            [ Text "(", Text autonym, Text ")" ]
 
         TranslationBeg ->
             [ Text "Ajudar a traduzir o "
@@ -345,7 +368,7 @@ translate mdString =
             [ Text "Ler as cartas usando texto para fala." ]
 
         SpeechNotSupportedExplanation ->
-            [ Text "Seu navegador não suporta texto para fala, ou não tem vozes instaladas." ]
+            [ Text "Seu navegador não suporta texto para fala, ou não possui vozes instaladas." ]
 
         VoiceSetting ->
             [ Text "Voz da Fala" ]
@@ -362,7 +385,7 @@ translate mdString =
         NotificationsBrowserPermissions ->
             [ Text "Você precisa dar permissão ao "
             , Ref MassiveDecks
-            , Text " para te notificar. Isto será usado apenas quando o jogo estiver aberto você estiver com isto ativado."
+            , Text " para te notificar. Isto será usado apenas quando o jogo estiver aberto e você estiver com isto ativado."
             ]
 
         NotificationOnlyWhenHiddenSetting ->
@@ -372,7 +395,7 @@ translate mdString =
             [ Text "Enviar notificações apenas quando você não está olhando para a página (ex.: em outra aba ou minimizado)." ]
 
         NotificationsOnlyWhenHiddenUnsupportedExplanation ->
-            [ Text "Seu navegador não suporta checar a visibilidade da página." ]
+            [ Text "Seu navegador não suporta a checagem de visibilidade da página." ]
 
         -- Terms
         Czar ->
@@ -422,6 +445,18 @@ translate mdString =
 
         Deck ->
             [ Text "Deck" ]
+
+        DeckSource ->
+            [ Text "Fonte do ", Ref Deck ]
+
+        DeckLanguage { language } ->
+            [ Text "em ", Text language ]
+
+        DeckAuthor { author } ->
+            [ Text "de ", Text author ]
+
+        DeckTranslator { translator } ->
+            [ Text "traduzido por ", Text translator ]
 
         StillPlaying ->
             [ Text "Jogando" ]
@@ -485,13 +520,11 @@ translate mdString =
             [ Text (String.fromInt numberOfCards) ]
 
         -- Lobby
-        -- TODO: Translate
         LobbyNameLabel ->
-            [ Text "Game Name" ]
+            [ Text "Nome do Jogo" ]
 
-        -- TODO: Translate
         DefaultLobbyName { owner } ->
-            [ Text owner, Text "'s Game" ]
+            [ Text "Jogo de ", Text owner ]
 
         Invite ->
             [ Text "Convide pessoas ao jogo." ]
@@ -693,7 +726,7 @@ translate mdString =
             ]
 
         NoDecksHint ->
-            [ Text "Não tem certeza? Adicione o deck original de ", Raw CardsAgainstHumanity, Text " (em inglês)." ]
+            [ Text "Não tem certeza? Adicione o deck original de ", Raw CardsAgainstHumanity, Text "." ]
 
         WaitForDecks ->
             [ Text "Os decks devem carregar antes de que você possa iniciar o jogo." ]
@@ -714,6 +747,13 @@ translate mdString =
             , Text "."
             ]
 
+        AddBlankCards { amount } ->
+            [ Text "Adicionar "
+            , amount |> String.fromInt |> Text
+            , Ref (Plural { singular = Response, amount = Just amount })
+            , Text " vazias."
+            ]
+
         AddDeck ->
             [ Text "Adicionar deck." ]
 
@@ -726,18 +766,28 @@ translate mdString =
         SourceServiceFailure { source } ->
             [ Ref source, Text " falhou ao providenciar o deck. Por favor tente novamente com outra fonte." ]
 
-        Cardcast ->
-            [ Text "Cardcast" ]
+        ManyDecks ->
+            [ Text "Many Decks" ]
 
-        CardcastPlayCode ->
-            [ Text "Código de Jogo ", Ref Cardcast ]
+        ManyDecksDeckCodeTitle ->
+            [ Text "Código do Deck" ]
 
-        CardcastEmptyPlayCode ->
-            [ Text "Digite um ", Ref CardcastPlayCode, Text " para o deck que você queira adicionar." ]
+        ManyDecksDeckCodeShort ->
+            [ Text "Um código de deck deve ser de pelo menos cinco caracteres." ]
+
+        ManyDecksWhereToGet ->
+            [ Text "Você pode criar decks para jogar usando o ", Ref ManyDecks, Text "." ]
 
         -- TODO: Translate
+        JsonAgainstHumanity ->
+            [ Missing ]
+
+        -- TODO: Translate
+        JsonAgainstHumanityAbout ->
+            [ Missing ]
+
         BuiltIn ->
-            [ Text "Built-in" ]
+            [ Text "Embutido" ]
 
         APlayer ->
             [ Text "Um jogador" ]
@@ -831,6 +881,14 @@ translate mdString =
         LobbyPasswordDescription ->
             [ Text "Uma senha que os jogadores devem usar para entrar no jogo." ]
 
+        AudienceMode ->
+            [ Text "Modo Audiência" ]
+
+        AudienceModeDescription ->
+            [ Text "Se ativado, novos usuários serão colocados como espectadores por padrão, e apenas você será capaz de "
+            , Text "transformá-los em jogadores."
+            ]
+
         StartGame ->
             [ Text "Iniciar Jogo" ]
 
@@ -863,14 +921,35 @@ translate mdString =
         PlayingTimeLimitDescription ->
             [ Text "Quanto tempo (em segundos) os ", Ref Players, Text " terão para fazer suas jogadas." ]
 
+        PlayingAfterDescription ->
+            [ Text "Quanto tempo (em segundos) os ", Ref Players, Text " terão para mudar suas jogadas antes de começar o próximo estágio." ]
+
         RevealingTimeLimitDescription ->
-            [ Text "Quanto tempo (em segundos) o ", Ref Czar, Text " tem para revelar as cartas." ]
+            [ Text "Quanto tempo (em segundos) o ", Ref Czar, Text " terá para revelar as cartas." ]
+
+        RevealingAfterDescription ->
+            [ Text "Quanto tempo (em segundos) para aguardar após a última carta ser revelada antes de começar o próximo estágio." ]
 
         JudgingTimeLimitDescription ->
-            [ Text "Quanto tempo (em segundos) o ", Ref Czar, Text " tem para julgar as cartas." ]
+            [ Text "Quanto tempo (em segundos) o ", Ref Czar, Text " terá para julgar as cartas." ]
 
         CompleteTimeLimitDescription ->
-            [ Text "Quanto tempo (em segundos) para esperar depois que uma partida acaba antes de começar o próximo." ]
+            [ Text "Quanto tempo (em segundos) para esperar depois que uma partida acaba antes de começar a próxima." ]
+
+        RevealingEnabledTitle ->
+            [ Raw Czar, Text " Revela Jogadas" ]
+
+        RevealingEnabled ->
+            [ Text "Se isto estiver ativado, o "
+            , Ref Czar
+            , Text " revela uma jogada por vez antes de escolher o vencedor."
+            ]
+
+        DuringTitle ->
+            [ Text "Tempo Limite" ]
+
+        AfterTitle ->
+            [ Text "Após" ]
 
         Conflict ->
             [ Text "Conflito" ]
@@ -885,6 +964,15 @@ translate mdString =
 
         TheirChanges ->
             [ Text "Mudanças dele(a)" ]
+
+        ConfigurationDisabledWhileInGame ->
+            [ Text "Enquanto o jogo estiver em andamento, você não pode alterar a configuração." ]
+
+        ConfigurationDisabledIfNotPrivileged ->
+            [ Text "Você não pode mudar a configuração desse jogo." ]
+
+        ConfigureNextGame ->
+            [ Text "Configurar Próximo Jogo" ]
 
         -- Game
         SubmitPlay ->
@@ -940,6 +1028,14 @@ translate mdString =
         ClientAway ->
             [ Text "Você está atualmente definido como ausente do jogo, e não está jogando." ]
 
+        Discard ->
+            [ Text "Descartar a carta selecionada, revelando para outros usuários do jogo." ]
+
+        Discarded { player } ->
+            [ Text player
+            , Text " descartou a seguinte carta:"
+            ]
+
         -- Instructions
         PlayInstruction { numberOfCards } ->
             [ Text "Você precisa escolher mais "
@@ -985,6 +1081,9 @@ translate mdString =
         Refresh ->
             [ Text "Atualizar" ]
 
+        Accept ->
+            [ Text "OK" ]
+
         -- Errors
         Error ->
             [ Text "Erro" ]
@@ -996,6 +1095,14 @@ translate mdString =
 
         ErrorHelpTitle ->
             [ Text "Desculpe, algo de errado não está certo." ]
+
+        -- TODO: Translate
+        ErrorCheckOutOfBand ->
+            [ Missing ]
+
+        -- TODO: Translate
+        TwitterHandle ->
+            [ Missing ]
 
         ReportError ->
             [ Text "Reportar Bug" ]

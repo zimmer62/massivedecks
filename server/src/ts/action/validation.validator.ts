@@ -28,6 +28,9 @@ export const Schema = {
     Action: {
       anyOf: [
         {
+          $ref: "#/definitions/Authenticate",
+        },
+        {
           $ref: "#/definitions/SetPresence",
         },
         {
@@ -43,6 +46,9 @@ export const Schema = {
           $ref: "#/definitions/Fill",
         },
         {
+          $ref: "#/definitions/Discard",
+        },
+        {
           $ref: "#/definitions/Judge",
         },
         {
@@ -53,9 +59,6 @@ export const Schema = {
         },
         {
           $ref: "#/definitions/EnforceTimeLimit",
-        },
-        {
-          $ref: "#/definitions/Authenticate",
         },
         {
           $ref: "#/definitions/Configure",
@@ -157,22 +160,6 @@ export const Schema = {
       required: ["id", "source"],
       type: "object",
     },
-    Cardcast: {
-      additionalProperties: false,
-      defaultProperties: [],
-      description: "A source for Cardcast.",
-      properties: {
-        playCode: {
-          $ref: "#/definitions/PlayCode",
-        },
-        source: {
-          enum: ["Cardcast"],
-          type: "string",
-        },
-      },
-      required: ["playCode", "source"],
-      type: "object",
-    },
     CheckAlive: {
       additionalProperties: false,
       defaultProperties: [],
@@ -190,10 +177,14 @@ export const Schema = {
     },
     ComedyWriter: {
       $ref: "#/definitions/ComedyWriter_1",
+      description:
+        'Configuration for the "Comedy Writer" house rule.\nThis rule adds blank cards that players write as they play them.',
     },
     ComedyWriter_1: {
       additionalProperties: false,
       defaultProperties: [],
+      description:
+        'Configuration for the "Comedy Writer" house rule.\nThis rule adds blank cards that players write as they play them.',
       properties: {
         exclusive: {
           description: "If only blank cards will be used.",
@@ -266,8 +257,20 @@ export const Schema = {
       defaultProperties: [],
       description: "More information that can be looked up given a source.",
       properties: {
+        author: {
+          description: "The name of the author of the deck.",
+          type: "string",
+        },
+        language: {
+          description: "The language tag for the language the deck is in.",
+          type: "string",
+        },
         name: {
           description: "A name for the source.",
+          type: "string",
+        },
+        translator: {
+          description: "The name of the translator of the deck.",
           type: "string",
         },
         url: {
@@ -276,6 +279,22 @@ export const Schema = {
         },
       },
       required: ["name"],
+      type: "object",
+    },
+    Discard: {
+      additionalProperties: false,
+      defaultProperties: [],
+      description: "Indicates the user is discarding their hand.",
+      properties: {
+        action: {
+          enum: ["Discard"],
+          type: "string",
+        },
+        card: {
+          $ref: "#/definitions/Id",
+        },
+      },
+      required: ["action", "card"],
       type: "object",
     },
     EndGame: {
@@ -313,10 +332,13 @@ export const Schema = {
     External: {
       anyOf: [
         {
-          $ref: "#/definitions/BuiltIn",
+          $ref: "#/definitions/ManyDecks",
         },
         {
-          $ref: "#/definitions/Cardcast",
+          $ref: "#/definitions/JsonAgainstHumanity",
+        },
+        {
+          $ref: "#/definitions/BuiltIn",
         },
       ],
       description: "An external source for a card or deck.",
@@ -364,6 +386,26 @@ export const Schema = {
     Id: {
       description: "A unique id for a play.",
       type: "string",
+    },
+    Id_1: {
+      description: "A unique id for a user.",
+      type: "string",
+    },
+    JsonAgainstHumanity: {
+      additionalProperties: false,
+      defaultProperties: [],
+      description: "From JSON Against Humanity (https://crhallberg.com/cah/)",
+      properties: {
+        id: {
+          type: "string",
+        },
+        source: {
+          enum: ["JAH"],
+          type: "string",
+        },
+      },
+      required: ["id", "source"],
+      type: "object",
     },
     Judge: {
       additionalProperties: false,
@@ -426,6 +468,22 @@ export const Schema = {
       required: ["action", "play"],
       type: "object",
     },
+    ManyDecks: {
+      additionalProperties: false,
+      defaultProperties: [],
+      description: "A source that just tries to load an arbitrary URL.",
+      properties: {
+        deckCode: {
+          type: "string",
+        },
+        source: {
+          enum: ["ManyDecks"],
+          type: "string",
+        },
+      },
+      required: ["deckCode", "source"],
+      type: "object",
+    },
     MoveOperation: {
       additionalProperties: false,
       defaultProperties: [],
@@ -454,6 +512,18 @@ export const Schema = {
       enum: ["Authenticate"],
       type: "string",
     },
+    NeverHaveIEver: {
+      $ref: "#/definitions/NeverHaveIEver_1",
+      description:
+        'Configuration for the "Never Have I Ever" house rule.\nThis rule allows players to discard cards, but everyone else in the game can see the discarded card.',
+    },
+    NeverHaveIEver_1: {
+      additionalProperties: false,
+      defaultProperties: [],
+      description:
+        'Configuration for the "Never Have I Ever" house rule.\nThis rule allows players to discard cards, but everyone else in the game can see the discarded card.',
+      type: "object",
+    },
     PackingHeat: {
       $ref: "#/definitions/PackingHeat_1",
       description: 'Configuration for the "Packing Heat" house rule.',
@@ -466,10 +536,6 @@ export const Schema = {
     },
     Patch: {
       $ref: "#/definitions/Array",
-    },
-    PlayCode: {
-      description: "A Cardcast play code for a deck.",
-      type: "string",
     },
     Presence: {
       description:
@@ -487,25 +553,35 @@ export const Schema = {
       defaultProperties: [],
       properties: {
         handSize: {
+          description: "The number of cards in each player's hand.",
+          maximum: 50,
+          minimum: 3,
           type: "number",
         },
         houseRules: {
           $ref: "#/definitions/Public_1",
         },
         scoreLimit: {
+          description:
+            "The score threshold for the game - when a player hits this they win.\nIf not set, then there is end - the game goes on infinitely.",
+          maximum: 10000,
+          minimum: 1,
           type: "number",
         },
-        timeLimits: {
-          $ref: "#/definitions/RoundTimeLimits",
+        stages: {
+          $ref: "#/definitions/Stages",
         },
       },
-      required: ["handSize", "houseRules", "timeLimits"],
+      required: ["handSize", "houseRules", "stages"],
       type: "object",
     },
     PublicConfig: {
       additionalProperties: false,
       defaultProperties: [],
       properties: {
+        audienceMode: {
+          type: "boolean",
+        },
         decks: {
           items: {
             anyOf: [
@@ -550,6 +626,9 @@ export const Schema = {
       properties: {
         comedyWriter: {
           $ref: "#/definitions/ComedyWriter",
+        },
+        neverHaveIEver: {
+          $ref: "#/definitions/NeverHaveIEver",
         },
         packingHeat: {
           $ref: "#/definitions/PackingHeat",
@@ -690,35 +769,6 @@ export const Schema = {
       enum: ["Player", "Spectator"],
       type: "string",
     },
-    RoundTimeLimits: {
-      additionalProperties: false,
-      defaultProperties: [],
-      description: "The time limits for the stages of a round.",
-      properties: {
-        complete: {
-          $ref: "#/definitions/TimeLimit_1",
-          description:
-            "The amount of time in seconds after one round completes the next one\nstarts.",
-        },
-        judging: {
-          $ref: "#/definitions/TimeLimit",
-          description: "The time limit for the judge to pick a winner.",
-        },
-        mode: {
-          $ref: "#/definitions/TimeLimitMode",
-        },
-        playing: {
-          $ref: "#/definitions/TimeLimit",
-          description: "The time limit for players to make their play.",
-        },
-        revealing: {
-          $ref: "#/definitions/TimeLimit",
-          description: "The time limit for the judge  to reveal the plays.",
-        },
-      },
-      required: ["complete", "mode"],
-      type: "object",
-    },
     SetPlayerAway: {
       additionalProperties: false,
       defaultProperties: [],
@@ -780,6 +830,9 @@ export const Schema = {
           enum: ["SetUserRole"],
           type: "string",
         },
+        id: {
+          $ref: "#/definitions/Id_1",
+        },
         role: {
           $ref: "#/definitions/Role",
         },
@@ -790,6 +843,56 @@ export const Schema = {
     Stage: {
       enum: ["Complete", "Judging", "Playing", "Revealing"],
       type: "string",
+    },
+    Stage_1: {
+      additionalProperties: false,
+      defaultProperties: [],
+      description: "Rules specific to a stage of a round.",
+      properties: {
+        after: {
+          $ref: "#/definitions/TimeLimit_1",
+          description:
+            "The amount of time to wait after the phase is done (for players to see what has happened, change things, etc...).",
+        },
+        duration: {
+          $ref: "#/definitions/TimeLimit",
+          description:
+            "The amount of time the phase can last before action can be taken.\nIf undefined, then there will be no time limit.",
+        },
+      },
+      required: ["after"],
+      type: "object",
+    },
+    Stage_2: {
+      $ref: "#/definitions/Stage_1",
+      description: "Rules specific to a stage of a round.",
+    },
+    Stages: {
+      additionalProperties: false,
+      defaultProperties: [],
+      description:
+        "How the game progresses through rounds and the various stages thereof.",
+      properties: {
+        judging: {
+          $ref: "#/definitions/Stage_1",
+          description: "The phase during which the winning play is picked.",
+        },
+        playing: {
+          $ref: "#/definitions/Stage_1",
+          description:
+            "The phase during which players choose responses to fill slots in the given call.",
+        },
+        revealing: {
+          $ref: "#/definitions/Stage_2",
+          description:
+            "The phase during which the plays are revealed to everyone.\nIf undefined, then this phase will be skipped.",
+        },
+        timeLimitMode: {
+          $ref: "#/definitions/TimeLimitMode",
+        },
+      },
+      required: ["judging", "playing", "timeLimitMode"],
+      type: "object",
     },
     StartGame: {
       additionalProperties: false,
@@ -908,7 +1011,7 @@ export const Schema = {
     },
     TimeLimitMode: {
       description:
-        'Indicated what happens when the time limit runs out.\n"Hard": Non-ready players are automatically set to away.\n"Soft": Ready players are given the option to set non-ready players to away.',
+        'Indicated what happens when duration time limits runs out.\n"Hard": Non-ready players are automatically set to away.\n"Soft": Ready players are given the option to set non-ready players to away.',
       enum: ["Hard", "Soft"],
       type: "string",
     },

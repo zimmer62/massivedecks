@@ -9,10 +9,12 @@ module MassiveDecks.Strings.Languages exposing
     , givenLanguageString
     , html
     , label
+    , langAttr
     , languageName
+    , languageNameOrCode
     , languages
-    , placeholder
     , recommended
+    , sortClosestFirst
     , string
     , title
     )
@@ -34,7 +36,7 @@ import MassiveDecks.Strings.Render as Render
 import MassiveDecks.Strings.Translation as Translation
 import MassiveDecks.Util.Maybe as Maybe
 import MassiveDecks.Util.String as String
-import Weightless.Attributes as WlA
+import Material.Attributes as Material
 
 
 {-| A list of all the languages enabled in the application, in the order they will be presented to the end-user.
@@ -68,11 +70,36 @@ languageName language =
     language |> pack |> .name
 
 
+{-| If we know this code, display it nicely, otherwise regurgitate it.
+-}
+languageNameOrCode : Shared -> String -> String
+languageNameOrCode shared givenCode =
+    givenCode |> fromCode |> Maybe.map (languageName >> string shared) |> Maybe.withDefault givenCode
+
+
 {-| The given language's name for itself.
 -}
-autonym : Language -> String
-autonym language =
-    languageName language |> givenLanguageString language
+autonym : Shared -> Language -> String
+autonym shared language =
+    languageName language |> givenLanguageString shared language
+
+
+{-| A sort that gives the closest matches first.
+Currently this just puts all exact matches first.
+-}
+sortClosestFirst : Language -> Maybe Language -> Maybe Language -> Order
+sortClosestFirst target a b =
+    if a == b then
+        EQ
+
+    else if a == Just target then
+        LT
+
+    else if b == Just target then
+        GT
+
+    else
+        EQ
 
 
 {-| The language the user is currently seeing the page in.
@@ -101,14 +128,14 @@ findBestMatch codes =
 -}
 string : Shared -> MdString -> String
 string shared mdString =
-    mdString |> givenLanguageString (currentLanguage shared)
+    mdString |> givenLanguageString shared (currentLanguage shared)
 
 
 {-| Build an actual string in the given language.
 -}
-givenLanguageString : Language -> MdString -> String
-givenLanguageString lang mdString =
-    mdString |> Render.asString ( lang, translate lang )
+givenLanguageString : Shared -> Language -> MdString -> String
+givenLanguageString shared lang mdString =
+    mdString |> Render.asString { lang = lang, translate = translate lang, parent = mdString, shared = shared }
 
 
 {-| An HTML text node from the given `MdString`. Note this is more than just convenience - we enhance some strings
@@ -120,14 +147,14 @@ html shared mdString =
         lang =
             currentLanguage shared
     in
-    mdString |> Render.asHtml ( lang, translate lang )
+    mdString |> Render.asHtml { lang = lang, translate = translate lang, parent = mdString, shared = shared }
 
 
-{-| Convenience for an HTML `placeholder` attribute from the given `MdString`.
+{-| The lang attribute for embedding text of a different language into other text.
 -}
-placeholder : Shared -> MdString -> Html.Attribute msg
-placeholder shared =
-    string shared >> String.capitalise >> HtmlA.placeholder
+langAttr : Language -> Html.Attribute msg
+langAttr language =
+    language |> code |> HtmlA.lang
 
 
 {-| Convenience for an HTML `title` attribute from the given `MdString`.
@@ -144,11 +171,11 @@ alt shared =
     string shared >> String.capitalise >> HtmlA.alt
 
 
-{-| Convenience for an Weightless `label` attribute from the given `MdString`.
+{-| Convenience for a Material `label` attribute from the given `MdString`.
 -}
 label : Shared -> MdString -> Html.Attribute msg
 label shared =
-    string shared >> String.capitalise >> WlA.label
+    string shared >> String.capitalise >> Material.label
 
 
 {-| Get a deck to recommend to the user if they haven't added any.

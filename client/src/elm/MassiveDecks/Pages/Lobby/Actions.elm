@@ -1,5 +1,6 @@
 module MassiveDecks.Pages.Lobby.Actions exposing
     ( configure
+    , discard
     , endGame
     , enforceTimeLimit
     , fill
@@ -37,6 +38,11 @@ configure patch =
 startGame : Cmd msg
 startGame =
     action "StartGame" []
+
+
+discard : Card.Id -> Cmd msg
+discard card =
+    action "Discard" [ ( "card", card |> Json.string ) ]
 
 
 fill : Card.Id -> String -> Cmd msg
@@ -89,9 +95,13 @@ setPrivilege player privilege =
     action "SetPrivilege" [ ( "user", player |> Json.string ), ( "privilege", privilege |> Encoders.privilege ) ]
 
 
-setUserRole : User.Role -> Cmd msg
-setUserRole role =
-    action "SetUserRole" [ ( "role", role |> Encoders.userRole ) ]
+setUserRole : Maybe User.Id -> User.Role -> Cmd msg
+setUserRole id role =
+    [ id |> Maybe.map (\i -> ( "id", i |> Json.string ))
+    , Just ( "role", role |> Encoders.userRole )
+    ]
+        |> List.filterMap identity
+        |> action "SetUserRole"
 
 
 kick : User.Id -> Cmd msg

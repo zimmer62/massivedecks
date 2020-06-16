@@ -2,6 +2,7 @@
 
 [![Build Status](https://img.shields.io/github/workflow/status/Lattyware/massivedecks/Build%20and%20publish%20docker%20images.)](https://github.com/Lattyware/massivedecks/actions)
 [![License](https://img.shields.io/github/license/Lattyware/massivedecks)](LICENSE)
+[![Follow on Twitter for Status & Updates](https://img.shields.io/twitter/follow/Massive_Decks?label=Status%20%26%20Updates&style=social)][twitter]
 
 Massive Decks is a free, open source comedy party game based on [Cards against Humanity][cah]. Play with friends!
 
@@ -9,13 +10,14 @@ Massive Decks is a free, open source comedy party game based on [Cards against H
 
 [hosted]: https://md.rereadgames.com/
 [cah]: https://cardsagainsthumanity.com/
+[twitter]: https://twitter.com/Massive_Decks
 
 ## Features
 
  - Play together in the same room or online.
- - Use any device (Mobile phone, PC, Chromecast, anything with a web browser).
+ - Use any device (Phone, PC, Chromecast, anything with a web browser).
  - You can set up a central screen, but you don't need to (no need to stream anything for other players online).
- - Custom decks.
+ - Custom decks (via [Many Decks][many-decks]).
  - Customise the rules:
    - Custom cards.
    - House rules.
@@ -23,6 +25,9 @@ Massive Decks is a free, open source comedy party game based on [Cards against H
    - Custom time limits if you want them.
  - Spectators.
  - Keeps your game private by default, you can also set a game password if needed.
+ - Community translations.
+
+[many-decks]: https://decks.rereadgames.com/
 
 ## About
 
@@ -84,8 +89,8 @@ by [Cards against Humanity][cah].
 [cah-license]: https://creativecommons.org/licenses/by-nc-sa/2.0/
 
 Massive Decks is also inspired by:
-* [CardCast][cardcast] - an app you to play on a Chromecast.
-* [Pretend You're Xyzzy][xyzzy] - a web game where you can jump in with people you don't know.
+* [CardCast][cardcast] - an app that allowed you to play on a Chromecast, now dead.
+* [Pretend You're Xyzzy][xyzzy] - another web implementation.
 
 [cardcast]: https://www.cardcastgame.com/
 [xyzzy]: http://pretendyoure.xyz/zy/

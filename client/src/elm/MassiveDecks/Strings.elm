@@ -22,8 +22,10 @@ type MdString
     | WhatIsThis -- A title for a section describing the game.
     | GameDescription -- A long description of the game.
     | NewGame -- The action of creating a new game. (Short, ideally one word).
+    | NewGameDescription -- A description of starting a new game.
     | FindPublicGame -- The action of finding a public game to join. (Short, ideally one word).
     | JoinPrivateGame -- The action of joining a private game the user was invited to. (Short, ideally one word).
+    | JoinPrivateGameDescription -- A description of joining a private game the user was invited to.
     | PlayGame -- The action of joining a game to play it. (Short, ideally one word).
     | AboutTheGame -- The action of finding out more information about the game. (Short, ideally one word).
     | AboutTheGameDescription -- A description of the action of finding out about the game.
@@ -39,6 +41,8 @@ type MdString
     | RejoinGame { code : String } -- A description of the action of attempting to rejoin a game the user was previously in.
     | LobbyRequiresPassword -- An explanation that the given lobby requires a password to join.
     | YouWereKicked -- An explanation that the player was kicked from the lobby they were in.
+    | ScrollToTop -- A description of the action of scrolling to the top of a screen.
+    | Copy -- A description of the action of copying something (i.e: copy and paste).
       -- Rules
     | CardsAgainstHumanity -- The name of "Cards Against Humanity" (https://cardsagainsthumanity.com/).
     | Rules -- The title for a DESCRIPTION of the rules.
@@ -73,6 +77,8 @@ type MdString
     | HouseRuleRandoCardrissianDescription -- A description of the "Rando Cardrissian" house rule.
     | HouseRuleRandoCardrissianNumber -- A name of the setting for the number of bots added to the game.
     | HouseRuleRandoCardrissianNumberDescription -- A description of the setting for the number of bots added to the game.
+    | HouseRuleNeverHaveIEver -- The name of the house rule where players can discard cards, sharing the discarded card.
+    | HouseRuleNeverHaveIEverDescription -- A description of the house rule where players can discard cards, sharing the discarded card.
     | MustBeMoreThanOrEqualValidationError { min : Int } -- An error when a configuration value must be more than or equal to the given value.
     | MustBeLessThanOrEqualValidationError { max : Int } -- An error when a configuration value must be less than or equal to the given value.
     | SetValue { value : Int } -- A description of the action of resolving a problem by setting the value to the given one.
@@ -81,6 +87,7 @@ type MdString
     | SettingsTitle -- The title for the settings panel.
     | LanguageSetting -- The label for the "Language" setting.
     | MissingLanguage -- A question asking if the user doesn't see the language they want.
+    | AutonymFormat { autonym : String } -- How to format the name for a language in that language (e.g: in brackets).
     | TranslationBeg -- A request for help translating the game.
     | CardSizeSetting -- The label for the "Card Size" setting.
     | CardSizeExplanation -- An explanation of what the card size does (changes the size of the card).
@@ -114,6 +121,10 @@ type MdString
     | GameCodeSpecificDescription -- A short description of what a specific game code and how to use it.
     | GameCodeHowToAcquire -- A short description of how to get a game code.
     | Deck -- The name for a deck of cards.
+    | DeckSource -- The name for a source of decks of cards.
+    | DeckLanguage { language : String } -- A description of what language a deck is in.
+    | DeckAuthor { author : String } -- A description of who created the deck.
+    | DeckTranslator { translator : String } -- A description of who translated the deck.
     | StillPlaying -- A term for a person who is in a round, but has not yet submitted a play.
     | PlayingDescription -- A description of a person who is in a round, but has not yet submitted a play.
     | Played -- A term for a person who is in a round, and has submitted a play.
@@ -198,13 +209,17 @@ type MdString
     | WaitForDecks -- A hint that the user has to wait for decks to load before starting the game.
     | MissingCardType { cardType : MdString } -- An error explaining that the user needs a deck with the given type of card (call/response).
     | NotEnoughCardsOfType { cardType : MdString, needed : Int, have : Int } -- An error explaining that the user needs to add more cards of the given type for the number of players.
+    | AddBlankCards { amount : Int } -- A description of the action of adding the given number of blank cards to the game.
     | AddDeck -- A description of the action of adding a deck to the game configuration.
     | RemoveDeck -- A description of the action of removing a deck from the game configuration.
     | SourceNotFound { source : MdString } -- An explanation that the deck didn't load because it doesn't exist on the source service.
     | SourceServiceFailure { source : MdString } -- An explanation that the deck didn't load because the source service is currently failing.
-    | Cardcast -- The name of the Cardcast service.
-    | CardcastPlayCode -- A term referring to the play code that identifies a deck on Cardcast.
-    | CardcastEmptyPlayCode -- A description of the problem of the entered Cardcast play code being empty.
+    | ManyDecks -- The name of the Many Decks source.
+    | ManyDecksDeckCodeTitle -- A term referring to a deck code for Many Decks.
+    | ManyDecksDeckCodeShort -- A description of the problem where a deck code must be at least five characters.
+    | ManyDecksWhereToGet -- A description of how to get deck codes from Many Decks.
+    | JsonAgainstHumanity -- The name of the JSON Against Humanity source.
+    | JsonAgainstHumanityAbout -- A short description of the JSON Against Humanity source.
     | BuiltIn -- A term referring to decks of cards that are provided by this instance of the game.
     | APlayer -- A short description of a generic player in the game in the context of being the author of a card.
     | DeckAlreadyAdded -- A description of the problem of the deck already being added to the game configuration.
@@ -230,6 +245,8 @@ type MdString
     | PasswordNotSecured -- A warning that game passwords are not stored securely and should not be used elsewhere.
     | LobbyPassword -- A short label for the lobby password.
     | LobbyPasswordDescription -- A description of a password to stop random people entering your lobby.
+    | AudienceMode -- A short label for a setting that means users can only play if a privileged user lets them.
+    | AudienceModeDescription -- A description of the setting that means users can only play if a privileged user lets them.
     | StartGame -- A short description of the action of starting the game.
     | Public -- The name of the setting for making the lobby public.
     | PublicDescription -- A description of what the public setting does (makes the game visible in the lobby browser).
@@ -240,13 +257,22 @@ type MdString
     | AutomaticDescription -- A description of what the automatic setting does (sets players as away automatically if they don't act in the time limit).
     | TimeLimit { stage : MdString } -- A name of the setting for the time limit on a given stage.
     | PlayingTimeLimitDescription -- A description of the setting for the time limit on the playing stage.
+    | PlayingAfterDescription -- A description of the setting for the time after the playing stage.
     | RevealingTimeLimitDescription -- A description of the setting for the time limit on the revealing stage.
+    | RevealingAfterDescription -- A description of the setting for the time after the revealing stage.
     | JudgingTimeLimitDescription -- A description of the setting for the time limit on the judging stage.
     | CompleteTimeLimitDescription -- A description of the setting for the time limit on the complete stage.
+    | RevealingEnabledTitle -- A title for the setting that enabled or disables the revealing stage of the round.
+    | RevealingEnabled -- A description of the setting that enabled or disables the revealing stage of the round.
+    | DuringTitle -- The name of the time limit that determines how long a user can take during a stage of a round.
+    | AfterTitle -- The name of the time after a stage of a round is over to wait before starting the next.
     | Conflict -- A title for a section showing conflicting configuration changes.
     | ConflictDescription -- An explanation of what a conflict is.
     | YourChanges -- A title for a section showing changes tot he configuration by the user.
     | TheirChanges -- A title for a section showing changes to the configuration by someone else.
+    | ConfigurationDisabledWhileInGame -- A message explaining that the configuration can't be changed while the game is in-progress.
+    | ConfigurationDisabledIfNotPrivileged -- A message explaining that the configuration can't be changed if the user isn't privileged.
+    | ConfigureNextGame -- A description of the action of configuring the next game for the lobby after the current one finished.
       -- Game
     | SubmitPlay -- A description of the action of submitting the play for the czar to judge.
     | TakeBackPlay -- A description of the action of taking back a previously submitted play.
@@ -265,6 +291,8 @@ type MdString
     | JudgingStarted -- A title for judging having started.
     | Paused -- A message explaining that the game has been paused due to too few active players.
     | ClientAway -- A message explaining that the player is set to "away" from the game.
+    | Discard -- A short description of the act of discarding a card.
+    | Discarded { player : String } -- A message explaining that the given player discarded the card being shown.
       -- Instructions
     | PlayInstruction { numberOfCards : Int } -- Instruction to the player on how to play cards.
     | SubmitInstruction -- Instruction to the player on how to submit their play.
@@ -279,10 +307,13 @@ type MdString
     | GoBackHome -- The action to go back to the main page of the application.
       -- Actions
     | Refresh -- The action to refresh the page with newer information.
+    | Accept -- A term for accepting something.
       -- Errors
     | Error -- A title for a generic error (something having gone wrong).
     | ErrorHelp -- A message telling the user that an error has occurred and what to do.
     | ErrorHelpTitle -- A title saying something went wrong.
+    | ErrorCheckOutOfBand -- A message to check the twitter account for more information on the service's status.
+    | TwitterHandle -- A description of the twitter account.
     | ReportError -- The action to report an error with the application to a developer.
     | ReportErrorDescription -- A description of the action of reporting an error to a developer.
     | ReportErrorBody -- An explanation of how to report an error to the developer.

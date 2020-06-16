@@ -6,6 +6,7 @@ import Html exposing (Html)
 import Html.Attributes as HtmlA
 import Html.Keyed as HtmlK
 import MassiveDecks.Card.Model as Card
+import MassiveDecks.Card.Parts as Parts
 import MassiveDecks.Card.Play as Play
 import MassiveDecks.Card.Response as Response
 import MassiveDecks.Game.Action.Model as Action
@@ -33,7 +34,9 @@ view shared nextRoundReady config users round =
                 |> List.map (\u -> ( u, Dict.get u round.plays ))
                 |> List.map (viewPlay shared config users round.winner)
             )
-    , fillCallWith = winning |> Maybe.map .play |> Maybe.withDefault []
+    , slotAttrs = always []
+    , fillCallWith = winning |> Maybe.map (.play >> Parts.fillsFromPlay) |> Maybe.withDefault Dict.empty
+    , roundAttrs = []
     }
 
 
@@ -47,7 +50,7 @@ viewPlay shared config users winner ( id, play ) =
     in
     ( id
     , Html.li [ HtmlA.class "with-byline" ]
-        [ Plays.byLine shared users id (Icon.trophy |> Maybe.justIf (winner == id)) (play |> Maybe.andThen .likes)
+        [ Plays.byLine shared users id (( "trophy", Icon.trophy ) |> Maybe.justIf (winner == id)) (play |> Maybe.andThen .likes)
         , HtmlK.ol [ HtmlA.class "play card-set" ] cards
         ]
     )

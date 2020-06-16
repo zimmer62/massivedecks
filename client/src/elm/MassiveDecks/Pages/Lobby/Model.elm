@@ -3,6 +3,7 @@ module MassiveDecks.Pages.Lobby.Model exposing
     , Change(..)
     , Claims
     , Lobby
+    , LobbyAndConfigure
     , Model
     , Notification
     , NotificationId
@@ -13,10 +14,11 @@ module MassiveDecks.Pages.Lobby.Model exposing
 
 import Dict exposing (Dict)
 import MassiveDecks.Animated exposing (Animated)
+import MassiveDecks.Components.Menu.Model as Menu
 import MassiveDecks.Error.Model exposing (Error)
 import MassiveDecks.Game.Model as Game exposing (Game)
 import MassiveDecks.Game.Time as Time
-import MassiveDecks.Models.MdError as MdError exposing (GameStateError, MdError)
+import MassiveDecks.Models.MdError exposing (GameStateError, MdError)
 import MassiveDecks.Pages.Lobby.Configure.Model as Configure
 import MassiveDecks.Pages.Lobby.GameCode exposing (GameCode)
 import MassiveDecks.Pages.Lobby.Route exposing (..)
@@ -29,7 +31,7 @@ to somewhere else with some payload.
 -}
 type Change
     = Stay Model
-    | AuthError GameCode MdError.AuthenticationError
+    | JoinError GameCode MdError
     | LeftGame GameCode User.LeaveReason
     | ConfigError Error
 
@@ -39,21 +41,27 @@ type Change
 type alias Model =
     { route : Route
     , auth : Auth
-    , lobby : Maybe Lobby
-    , configure : Configure.Model
+    , lobbyAndConfigure : Maybe LobbyAndConfigure
     , notificationId : NotificationId
     , notifications : List (Animated Notification)
     , inviteDialogOpen : Bool
     , timeAnchor : Maybe Time.Anchor
     , spectate : Spectate.Model
+    , gameMenu : Menu.State
+    , userMenu : Maybe User.Id
+    }
+
+
+type alias LobbyAndConfigure =
+    { lobby : Lobby
+    , configure : Configure.Model
     }
 
 
 {-| A lobby.
 -}
 type alias Lobby =
-    { public : Bool
-    , users : Dict User.Id User
+    { users : Dict User.Id User
     , owner : User.Id
     , config : Configure.Config
     , game : Maybe Game.Model

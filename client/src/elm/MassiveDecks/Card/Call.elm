@@ -3,9 +3,9 @@ module MassiveDecks.Card.Call exposing
     , view
     , viewFilled
     , viewUnknown
-    , viewWithAttributes
     )
 
+import Dict exposing (Dict)
 import Html exposing (Html)
 import Html.Attributes as HtmlA
 import MassiveDecks.Card as Card
@@ -36,16 +36,9 @@ view shared config side attributes call =
 
 {-| Render the call to HTML, with the slots filled with the given values.
 -}
-viewFilled : Shared -> Config -> Side -> List (Html.Attribute msg) -> List String -> Call -> Html msg
-viewFilled shared config side attributes fillWith call =
-    viewInternal shared config side attributes (Parts.viewFilled fillWith) call
-
-
-{-| Render the call to HTML, with the slots filled with the given values and custom attributes applied to each part.
--}
-viewWithAttributes : Shared -> Config -> Side -> List (Html.Attribute msg) -> (Int -> Int -> Parts.Part -> List (Html.Attribute msg)) -> List String -> Call -> Html msg
-viewWithAttributes shared config side attributes partAttributes fillWith call =
-    viewInternal shared config side attributes (Parts.viewWithAttributes partAttributes fillWith) call
+viewFilled : Shared -> Config -> Side -> List (Html.Attribute msg) -> Parts.SlotAttrs msg -> Dict Int String -> Call -> Html msg
+viewFilled shared config side attributes slotAttrs fillWith call =
+    viewInternal shared config side attributes (Parts.viewFilled slotAttrs fillWith) call
 
 
 {-| Render an unknown response to HTML, face-down.
@@ -89,7 +82,10 @@ instructions shared rules parts =
             Parts.slotCount parts
 
         instructionViews =
-            List.concat [ extraCardsInstruction shared rules slots, pickInstruction shared slots ]
+            List.concat
+                [ extraCardsInstruction shared rules slots
+                , pickInstruction shared slots (Parts.nonObviousSlotIndices parts)
+                ]
     in
     [ Html.ol [ HtmlA.class "instructions" ] instructionViews ]
         |> Maybe.justIf (List.length instructionViews > 0)
@@ -111,8 +107,8 @@ extraCardsInstruction shared rules slots =
         []
 
 
-pickInstruction : Shared -> Int -> List (Html msg)
-pickInstruction shared slots =
+pickInstruction : Shared -> Int -> Bool -> List (Html msg)
+pickInstruction shared slots nonObviousSlotIndices =
     [ Html.li [] [ Pick { numberOfCards = slots } |> Lang.html shared ] ]
-        |> Maybe.justIf (slots > 1)
+        |> Maybe.justIf (slots > 1 || nonObviousSlotIndices)
         |> Maybe.withDefault []

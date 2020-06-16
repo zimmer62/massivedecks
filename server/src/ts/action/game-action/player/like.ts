@@ -29,19 +29,20 @@ class LikeActions extends Actions.Implementation<
     if (
       lobby.game.round.verifyStage<Round.Revealing | Round.Judging>(
         action,
+        "Revealing",
         "Judging"
       )
     ) {
       const cRound = lobby.game.round;
-      const target = cRound.plays.find(p => p.id === action.play);
+      const target = cRound.plays.find((p) => p.id === action.play);
       if (
         target !== undefined &&
         target.playedBy !== auth.uid &&
-        target.likes.find(id => id === auth.uid) === undefined
+        target.likes.find((id) => id === auth.uid) === undefined
       ) {
         target.likes.push(auth.uid);
         return {
-          lobby
+          lobby,
         };
       } else {
         return {};

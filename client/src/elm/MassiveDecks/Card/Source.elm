@@ -7,8 +7,10 @@ module MassiveDecks.Card.Source exposing
     , equals
     , externalAndEquals
     , generalEditor
+    , generalMatching
     , loadFailureReasonMessage
     , logo
+    , messages
     , name
     , problems
     , tooltip
@@ -16,11 +18,11 @@ module MassiveDecks.Card.Source exposing
 
 import Html exposing (Html)
 import Html.Attributes as HtmlA
-import Html.Events as HtmlE
 import MassiveDecks.Card.Source.BuiltIn as BuiltIn
-import MassiveDecks.Card.Source.Cardcast as Cardcast
 import MassiveDecks.Card.Source.Custom as Player
 import MassiveDecks.Card.Source.Fake as Fake
+import MassiveDecks.Card.Source.JsonAgainstHumanity as JsonAgainstHumanity
+import MassiveDecks.Card.Source.ManyDecks as ManyDecks
 import MassiveDecks.Card.Source.Methods exposing (..)
 import MassiveDecks.Card.Source.Model exposing (..)
 import MassiveDecks.Components.Form.Message exposing (Message)
@@ -29,8 +31,8 @@ import MassiveDecks.Pages.Lobby.Configure.Decks.Model exposing (DeckOrError)
 import MassiveDecks.Strings as Strings exposing (MdString)
 import MassiveDecks.Strings.Languages as Lang
 import MassiveDecks.Util.Maybe as Maybe
-import Weightless as Wl
-import Weightless.Attributes as WlA
+import Material.Select as Select
+import Paper.Tooltip as Tooltip
 
 
 {-| The default source for an editor.
@@ -61,24 +63,31 @@ externalAndEquals a b =
 
 {-| Get an general methods of the given type.
 -}
-generalMethods : String -> Maybe (ExternalGeneralMethods msg)
-generalMethods n =
-    case n of
-        "BuiltIn" ->
-            BuiltIn.generalMethods |> Just
+generalMethods : General -> ExternalGeneralMethods msg
+generalMethods source =
+    case source of
+        GBuiltIn ->
+            BuiltIn.generalMethods
 
-        "Cardcast" ->
-            Cardcast.generalMethods |> Just
+        GManyDecks ->
+            ManyDecks.generalMethods
 
-        _ ->
-            Nothing
+        GJsonAgainstHumanity ->
+            JsonAgainstHumanity.generalMethods
 
 
 {-| Get an empty source of the given type.
 -}
-empty : Shared -> String -> Maybe External
-empty shared n =
-    generalMethods n |> Maybe.map (\m -> m.empty shared)
+empty : Shared -> General -> External
+empty shared =
+    generalMethods >> (\m -> m.empty shared)
+
+
+{-| Get the general source for the given specific source.
+-}
+generalMatching : External -> General
+generalMatching source =
+    (externalMethods source |> .id) ()
 
 
 {-| An empty source of the same general type as the given one.
@@ -102,6 +111,13 @@ problems source =
     () |> (externalMethods source |> .problems)
 
 
+{-| Any problems, if they exist, for a source. If none, it is valid.
+-}
+messages : General -> List (Message msg)
+messages source =
+    (generalMethods source |> .messages) ()
+
+
 {-| The default details for a source.
 -}
 defaultDetails : Shared -> Source -> Details
@@ -111,28 +127,46 @@ defaultDetails shared source =
 
 {-| A tooltip for a source.
 -}
-tooltip : Shared -> Source -> Maybe ( String, Html msg )
-tooltip shared source =
-    case shared |> (methods source |> .tooltip) of
-        Just ( id, rendered ) ->
-            Just
-                ( id
-                , Wl.tooltip
-                    (List.concat
-                        [ [ WlA.anchor id
-                          , WlA.fixed
-                          , WlA.anchorOpenEvents [ "mouseover" ]
-                          , WlA.anchorCloseEvents [ "mouseout" ]
-                          ]
-                        , WlA.anchorOrigin WlA.XRight WlA.YCenter
-                        , WlA.transformOrigin WlA.XLeft WlA.YCenter
-                        ]
-                    )
-                    [ rendered ]
-                )
+tooltip : Shared -> Tooltip.Position -> Details -> Source -> Maybe ( String, Html msg )
+tooltip shared position details source =
+    let
+        ms =
+            methods source
+    in
+    ms.tooltip (generalTooltip shared position details)
 
-        Nothing ->
-            Nothing
+
+{-| A general tooltip for any source.
+-}
+generalTooltip : Shared -> Tooltip.Position -> Details -> String -> List (Html msg) -> Html msg
+generalTooltip shared position details forId sourceSpecificContent =
+    let
+        lang l =
+            Html.p [ HtmlA.class "language" ]
+                [ Strings.DeckLanguage { language = l |> Lang.languageNameOrCode shared } |> Lang.html shared
+                ]
+
+        author a =
+            Html.p [ HtmlA.class "author" ] [ Strings.DeckAuthor { author = a } |> Lang.html shared ]
+
+        translator t =
+            Html.p [ HtmlA.class "translator" ] [ Strings.DeckTranslator { translator = t } |> Lang.html shared ]
+
+        generalContent =
+            [ details.language |> Maybe.andThen (\l -> Maybe.justIf (l /= (Lang.currentLanguage shared |> Lang.code)) (lang l))
+            , details.author |> Maybe.map author
+            , details.translator |> Maybe.map translator
+            ]
+                |> List.filterMap identity
+    in
+    [ Html.div [ HtmlA.class "source-tooltip" ]
+        ([ sourceSpecificContent
+         , generalContent
+         ]
+            |> List.concat
+        )
+    ]
+        |> Tooltip.view position forId
 
 
 {-| The logo for a source.
@@ -144,32 +178,39 @@ logo source =
 
 {-| An editor for any supported external source.
 -}
-generalEditor : Shared -> List DeckOrError -> External -> (External -> msg) -> List (Html msg)
-generalEditor shared existing currentValue update =
+generalEditor : Shared -> List DeckOrError -> External -> (External -> msg) -> Maybe msg -> msg -> List (Html msg)
+generalEditor shared existing currentValue update submit noOp =
     let
         enabledSources =
             [ shared.sources.builtIn |> Maybe.map (\_ -> BuiltIn.generalMethods)
-            , Cardcast.generalMethods |> Maybe.justIf shared.sources.cardcast
+            , shared.sources.manyDecks |> Maybe.map (\_ -> ManyDecks.generalMethods)
+            , shared.sources.jsonAgainstHumanity |> Maybe.map (\_ -> JsonAgainstHumanity.generalMethods)
             ]
 
-        toOption source =
-            Html.option [ HtmlA.value (source.id ()) ]
-                [ () |> source.name |> Lang.html shared
-                ]
+        toItem source =
+            { id = source.id ()
+            , icon = source.logo ()
+            , primary = [ () |> source.name |> Lang.string shared |> Html.text ]
+            , secondary = Nothing
+            , meta = Nothing
+            }
     in
-    [ Wl.select
-        [ HtmlA.id "source-selector"
-        , WlA.outlined
-        , HtmlE.onInput (empty shared >> Maybe.withDefault (default shared) >> update)
-        ]
-        (enabledSources |> List.filterMap (Maybe.map toOption))
-    , editor shared existing currentValue update
+    [ Select.view shared
+        { label = Strings.DeckSource
+        , idToString = generalToString
+        , idFromString = generalFromString
+        , selected = currentValue |> generalMatching |> Just
+        , wrap = Maybe.map (empty shared) >> Maybe.withDefault (default shared) >> update
+        }
+        [ HtmlA.id "source-selector" ]
+        (enabledSources |> List.filterMap (Maybe.map toItem))
+    , editor shared existing currentValue update submit noOp
     ]
 
 
 {-| An editor for the given source value.
 -}
-editor : Shared -> List DeckOrError -> External -> (External -> msg) -> Html msg
+editor : Shared -> List DeckOrError -> External -> (External -> msg) -> Maybe msg -> msg -> Html msg
 editor shared existing source =
     (externalMethods source |> .editor) shared existing
 
@@ -203,6 +244,7 @@ methods source =
             , logo = ms.logo
             , tooltip = ms.tooltip
             , defaultDetails = ms.defaultDetails
+            , messages = ms.messages
             }
 
         Custom ->
@@ -215,8 +257,11 @@ methods source =
 externalMethods : External -> ExternalMethods msg
 externalMethods external =
     case external of
-        Cardcast playCode ->
-            Cardcast.methods playCode
+        ManyDecks url ->
+            ManyDecks.methods url
 
         BuiltIn id ->
             BuiltIn.methods id
+
+        JsonAgainstHumanity id ->
+            JsonAgainstHumanity.methods id

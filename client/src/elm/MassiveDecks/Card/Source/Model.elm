@@ -1,16 +1,29 @@
 module MassiveDecks.Card.Source.Model exposing
-    ( BuiltInDeck
-    , BuiltInInfo
-    , Details
+    ( Details
     , External(..)
+    , General(..)
     , Info
     , LoadFailureReason(..)
     , Source(..)
     , Summary
+    , generalDecoder
+    , generalFromString
+    , generalToString
     )
 
+import Json.Decode as Json
 import MassiveDecks.Card.Source.BuiltIn.Model as BuiltIn
-import MassiveDecks.Card.Source.Cardcast.Model as Cardcast
+import MassiveDecks.Card.Source.JsonAgainstHumanity.Model as JsonAgainstHumanity
+import MassiveDecks.Card.Source.ManyDecks.Model as ManyDecks
+import MassiveDecks.Strings.Languages.Model exposing (Language)
+
+
+{-| A representation of a source in general terms, not a specific deck.
+-}
+type General
+    = GBuiltIn
+    | GManyDecks
+    | GJsonAgainstHumanity
 
 
 {-| Details on where game data came from.
@@ -31,12 +44,11 @@ type Source
 "External" might be a bit of a poor name here. What this mostly means is that the user can add these as decks. Other
 sources are more limited and specific.
 
-    - `Cardcast`: Decks from the Cardcast database.
-
 -}
 type External
     = BuiltIn BuiltIn.Id
-    | Cardcast Cardcast.PlayCode
+    | ManyDecks ManyDecks.DeckCode
+    | JsonAgainstHumanity JsonAgainstHumanity.Id
 
 
 {-| A summary of the contents of the source deck.
@@ -53,6 +65,9 @@ type alias Summary =
 type alias Details =
     { name : String
     , url : Maybe String
+    , author : Maybe String
+    , language : Maybe String
+    , translator : Maybe String
     }
 
 
@@ -66,14 +81,56 @@ type LoadFailureReason
 {-| Information about what sources are available from the server.
 -}
 type alias Info =
-    { builtIn : Maybe BuiltInInfo
-    , cardcast : Bool
+    { builtIn : Maybe BuiltIn.Info
+    , manyDecks : Maybe ManyDecks.Info
+    , jsonAgainstHumanity : Maybe JsonAgainstHumanity.Info
     }
 
 
-type alias BuiltInInfo =
-    { decks : List BuiltInDeck }
+{-| Get a string name from a general source.
+-}
+generalToString : General -> String
+generalToString source =
+    case source of
+        GBuiltIn ->
+            "BuiltIn"
+
+        GManyDecks ->
+            "ManyDecks"
+
+        GJsonAgainstHumanity ->
+            "JAH"
 
 
-type alias BuiltInDeck =
-    { name : String, id : BuiltIn.Id }
+{-| Get a general source by a string name.
+-}
+generalFromString : String -> Maybe General
+generalFromString sourceName =
+    case sourceName of
+        "BuiltIn" ->
+            Just GBuiltIn
+
+        "ManyDecks" ->
+            Just GManyDecks
+
+        "JAH" ->
+            Just GJsonAgainstHumanity
+
+        _ ->
+            Nothing
+
+
+{-| A Json decoder for general sources.
+-}
+generalDecoder : Json.Decoder General
+generalDecoder =
+    let
+        internal name =
+            case generalFromString name of
+                Just general ->
+                    Json.succeed general
+
+                Nothing ->
+                    Json.fail ("Unknown source '" ++ name ++ "'.")
+    in
+    Json.string |> Json.andThen internal

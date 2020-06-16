@@ -8,9 +8,12 @@ import * as GameCode from "../lobby/game-code";
 import { Store, Transaction } from "../store";
 import * as Timeout from "../timeout";
 import * as Token from "../user/token";
+import * as LobbyConfig from "../lobby/config";
+import { Task } from "../task";
 
 declare module "wu" {
   // Fix incorrect types.
+  // noinspection JSUnusedGlobalSymbols
   interface WuIterable<T> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     spreadMap<U>(fn: (...x: any[]) => U): WuIterable<U>;
@@ -23,13 +26,18 @@ interface TimeoutMeta {
   after: number;
 }
 
+interface LobbyMeta {
+  lobby: Lobby.Lobby;
+  lastWrite: number;
+}
+
 /**
  * A store where the data is stored in memory.
  */
 export class InMemoryStore extends Store {
   public readonly config: ServerConfig.InMemory;
   private readonly _id: string;
-  private readonly lobbies: Map<GameCode.GameCode, Lobby.Lobby>;
+  private readonly lobbies: Map<GameCode.GameCode, LobbyMeta>;
   private readonly timeouts: Map<Timeout.Id, TimeoutMeta>;
   private nextLobby: number;
 
@@ -50,8 +58,8 @@ export class InMemoryStore extends Store {
 
   public async *lobbySummaries(): AsyncIterableIterator<Lobby.Summary> {
     const publicSummaries = wu(this.lobbies.entries())
-      .filter(([_, l]) => l.config.public)
-      .spreadMap(Lobby.summary);
+      .filter(([_, { lobby }]) => lobby.config.public)
+      .map(([gameCode, { lobby }]) => Lobby.summary(gameCode, lobby));
     for (const summary of publicSummaries) {
       yield summary;
     }
@@ -59,12 +67,17 @@ export class InMemoryStore extends Store {
 
   public async newLobby(
     creation: CreateLobby,
-    secret: string
-  ): Promise<{ gameCode: GameCode.GameCode; token: Token.Token }> {
-    const lobby = Lobby.create(creation);
+    secret: string,
+    defaults: LobbyConfig.Defaults
+  ): Promise<{
+    gameCode: GameCode.GameCode;
+    token: Token.Token;
+    tasks: Iterable<Task>;
+  }> {
     const gameCode = GameCode.encode(this.nextLobby);
+    const { lobby, tasks } = Lobby.create(gameCode, creation, defaults);
     this.nextLobby += 1;
-    this.lobbies.set(gameCode, lobby);
+    this.lobbies.set(gameCode, { lobby, lastWrite: Date.now() });
     return {
       gameCode,
       token: Token.create(
@@ -75,13 +88,14 @@ export class InMemoryStore extends Store {
         this._id,
         secret
       ),
+      tasks,
     };
   }
 
   private async lobby(gameCode: GameCode.GameCode): Promise<Lobby.Lobby> {
     const lobby = this.lobbies.get(gameCode.toUpperCase());
     if (lobby !== undefined) {
-      return lobby;
+      return lobby.lobby;
     } else {
       const lobbyNumber = GameCode.decode(gameCode);
       if (lobbyNumber < this.nextLobby) {
@@ -98,7 +112,10 @@ export class InMemoryStore extends Store {
   ): Promise<T> {
     const { transaction, result } = write(await this.lobby(gameCode));
     if (transaction.lobby !== undefined) {
-      this.lobbies.set(gameCode, transaction.lobby);
+      this.lobbies.set(gameCode, {
+        lobby: transaction.lobby,
+        lastWrite: Date.now(),
+      });
     }
     if (transaction.timeouts !== undefined) {
       for (const timeout of transaction.timeouts) {
@@ -117,8 +134,9 @@ export class InMemoryStore extends Store {
 
   public async garbageCollect(): Promise<number> {
     const toRemove = new Set<GameCode.GameCode>();
-    for (const [gameCode, lobby] of this.lobbies.entries()) {
+    for (const [gameCode, { lobby, lastWrite }] of this.lobbies.entries()) {
       if (
+        lastWrite + this.config.abandonedTime < Date.now() ||
         wu(Object.values(lobby.users)).every(
           (u) => u.control === "Computer" || u.presence === "Left"
         )

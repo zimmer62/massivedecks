@@ -1,22 +1,18 @@
 module MassiveDecks.Game.Rules exposing
     ( ComedyWriter
     , HouseRules
+    , NeverHaveIEver
     , PackingHeat
     , Rando
     , Reboot
     , Rules
+    , Stage
+    , Stages
     , TimeLimitMode(..)
-    , TimeLimits
-    , default
-    , defaultTimeLimits
-    , getTimeLimitByStage
-    , setTimeLimitByStage
     )
 
 {-| Game rules.
 -}
-
-import MassiveDecks.Game.Round as Round
 
 
 {-| The base rules for a game.
@@ -25,7 +21,7 @@ type alias Rules =
     { handSize : Int
     , scoreLimit : Maybe Int
     , houseRules : HouseRules
-    , timeLimits : TimeLimits
+    , stages : Stages
     }
 
 
@@ -34,6 +30,7 @@ type alias HouseRules =
     , packingHeat : Maybe PackingHeat
     , reboot : Maybe Reboot
     , comedyWriter : Maybe ComedyWriter
+    , neverHaveIEver : Maybe NeverHaveIEver
     }
 
 
@@ -42,69 +39,18 @@ type TimeLimitMode
     | Soft
 
 
-type alias TimeLimits =
+type alias Stage =
+    { duration : Maybe Int
+    , after : Int
+    }
+
+
+type alias Stages =
     { mode : TimeLimitMode
-    , playing : Maybe Int
-    , revealing : Maybe Int
-    , judging : Maybe Int
-    , complete : Int
+    , playing : Stage
+    , revealing : Maybe Stage
+    , judging : Stage
     }
-
-
-default : Rules
-default =
-    { handSize = 10
-    , scoreLimit = Just 15
-    , houseRules =
-        { rando = Nothing
-        , packingHeat = Nothing
-        , reboot = Nothing
-        , comedyWriter = Nothing
-        }
-    , timeLimits = defaultTimeLimits
-    }
-
-
-defaultTimeLimits : TimeLimits
-defaultTimeLimits =
-    { mode = Soft
-    , playing = Just 90
-    , revealing = Just 120
-    , judging = Just 90
-    , complete = 5
-    }
-
-
-setTimeLimitByStage : Round.Stage -> Maybe Int -> TimeLimits -> TimeLimits
-setTimeLimitByStage stage timeLimit timeLimits =
-    case stage of
-        Round.SPlaying ->
-            { timeLimits | playing = timeLimit }
-
-        Round.SRevealing ->
-            { timeLimits | revealing = timeLimit }
-
-        Round.SJudging ->
-            { timeLimits | judging = timeLimit }
-
-        Round.SComplete ->
-            { timeLimits | complete = timeLimit |> Maybe.withDefault timeLimits.complete }
-
-
-getTimeLimitByStage : Round.Stage -> TimeLimits -> Maybe Int
-getTimeLimitByStage stage timeLimits =
-    case stage of
-        Round.SPlaying ->
-            timeLimits.playing
-
-        Round.SRevealing ->
-            timeLimits.revealing
-
-        Round.SJudging ->
-            timeLimits.judging
-
-        Round.SComplete ->
-            Just timeLimits.complete
 
 
 type alias PackingHeat =
@@ -123,3 +69,7 @@ type alias ComedyWriter =
     { number : Int
     , exclusive : Bool
     }
+
+
+type alias NeverHaveIEver =
+    {}
